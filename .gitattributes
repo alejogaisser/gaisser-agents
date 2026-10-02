@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.ps1 text eol=crlf
+dist/** linguist-generated=true
+.claude-plugin/marketplace.json linguist-generated=true
+.agents/plugins/marketplace.json linguist-generated=true

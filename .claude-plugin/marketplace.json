@@ -1,0 +1,22 @@
+{
+  "name": "gaisser-agents",
+  "description": "Curated subagents and skills grouped into installable plugins, starting with a plan, implement, and verify dev pipeline.",
+  "owner": {
+    "name": "Alejo Gaisser",
+    "url": "https://github.com/alejogaisser"
+  },
+  "plugins": [
+    {
+      "name": "dev-pipeline",
+      "source": "./dist/claude-code/dev-pipeline",
+      "description": "Architect, coder, and tester subagents plus a pipeline skill that orchestrates them into a plan, implement, and verify workflow.",
+      "category": "development",
+      "tags": [
+        "planning",
+        "implementation",
+        "testing",
+        "orchestration"
+      ]
+    }
+  ]
+}

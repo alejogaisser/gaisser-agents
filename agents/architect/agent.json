@@ -1,0 +1,7 @@
+{
+  "name": "architect",
+  "description": "Designs the solution before any code is written and saves an implementation plan to docs/plan.md. Use proactively for new features, refactors, and architecture decisions. Never edits project code.",
+  "capabilities": ["read", "write", "web"],
+  "model": "deep",
+  "effort": "max"
+}

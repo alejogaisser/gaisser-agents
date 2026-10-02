@@ -1,0 +1,6 @@
+{
+  "name": "pipeline",
+  "description": "Orchestrates the architect, coder, and tester subagents to plan, implement, and verify a code change, with optional checkpoints after each stage. Use for new features, refactors, and multi-file bug fixes, or when the user asks for the pipeline, for checkpoints, or for a single stage such as \"architect only\".",
+  "argumentHint": "[task] [with checkpoints]",
+  "agents": ["architect", "coder", "tester"]
+}

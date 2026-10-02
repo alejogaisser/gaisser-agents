@@ -1,0 +1,109 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Sources and generated output
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Validate sources and check generated output is in sync
+        run: python scripts/build.py --check
+      - name: Check plugin version bumps
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base="origin/$BASE_REF"
+          else
+            base="$BEFORE_SHA"
+          fi
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            echo "No base commit to compare against; skipping the version-bump check."
+            exit 0
+          fi
+          python scripts/build.py --check --base-ref "$base"
+      - name: Build script unit tests
+        if: hashFiles('scripts/tests/test_*.py') != ''
+        run: python -m unittest discover -s scripts/tests -v
+
+  claude-cli:
+    name: Claude Code plugin validator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Validate marketplace
+        run: claude plugin validate . --strict
+      - name: Validate each generated plugin
+        run: |
+          for dir in dist/claude-code/*/; do
+            echo "::group::$dir"
+            claude plugin validate "$dir" --strict
+            echo "::endgroup::"
+          done
+
+  install-scripts:
+    name: Install scripts (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: install.sh smoke test
+        shell: bash
+        run: |
+          BASH_BIN=bash
+          if [ "$RUNNER_OS" = "macOS" ]; then BASH_BIN=/bin/bash; fi
+          "$BASH_BIN" install.sh --list --target all
+          "$BASH_BIN" install.sh --target all --all --base ./.ci-base-sh
+          test -f ./.ci-base-sh/.claude/agents/architect.md
+          test -f ./.ci-base-sh/.claude/skills/pipeline/SKILL.md
+          test -f ./.ci-base-sh/.codex/agents/architect.toml
+          test -f ./.ci-base-sh/.agents/skills/pipeline/SKILL.md
+          out="$("$BASH_BIN" install.sh --target all --all --base ./.ci-base-sh)"
+          grep -q "unchanged" <<< "$out"
+          "$BASH_BIN" install.sh --target codex --all --agents-only --base ./.ci-base-sh-ao
+          test -f ./.ci-base-sh-ao/.codex/agents/architect.toml
+          test ! -e ./.ci-base-sh-ao/.agents/skills/pipeline
+      - name: install.ps1 smoke test (Windows PowerShell 5.1)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          .\install.ps1 -List -Target all
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          .\install.ps1 -Target all -All -Base .\.ci-base-ps
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (-not (Test-Path .\.ci-base-ps\.claude\agents\architect.md)) { exit 1 }
+          if (-not (Test-Path .\.ci-base-ps\.codex\agents\architect.toml)) { exit 1 }
+          if (-not (Test-Path .\.ci-base-ps\.agents\skills\pipeline\SKILL.md)) { exit 1 }
+          .\install.ps1 -Target codex -All -AgentsOnly -Base .\.ci-base-ps-ao
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (Test-Path .\.ci-base-ps-ao\.agents\skills\pipeline) { exit 1 }
+      - name: install.ps1 smoke test (PowerShell 7)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./install.ps1 -Target all -All -Base ./.ci-base-pwsh
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (-not (Test-Path ./.ci-base-pwsh/.claude/agents/architect.md)) { exit 1 }

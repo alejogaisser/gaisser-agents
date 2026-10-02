@@ -1,0 +1,25 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Local AI tool files
+.claude/settings.local.json
+.claude/agent-memory-local/
+CLAUDE.local.md
+
+# CI and local install-script tests
+.ci-base-*/
+
+# Working artifacts of the dev pipeline
+docs/plan-*.md

@@ -1,0 +1,7 @@
+{
+  "name": "coder",
+  "description": "Implements an existing plan (docs/plan.md or a plan path you pass) step by step, following the project's conventions, and flags gaps instead of improvising. Use after the architect has produced a plan, or to apply fixes reported by the tester.",
+  "capabilities": ["read", "edit", "write", "notebook", "shell", "lsp"],
+  "model": "standard",
+  "effort": "medium"
+}

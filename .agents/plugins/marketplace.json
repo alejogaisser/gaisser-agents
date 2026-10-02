@@ -1,0 +1,20 @@
+{
+  "name": "gaisser-agents",
+  "interface": {
+    "displayName": "Gaisser Agents"
+  },
+  "plugins": [
+    {
+      "name": "dev-pipeline",
+      "source": {
+        "source": "local",
+        "path": "./dist/codex-plugin/dev-pipeline"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Development"
+    }
+  ]
+}

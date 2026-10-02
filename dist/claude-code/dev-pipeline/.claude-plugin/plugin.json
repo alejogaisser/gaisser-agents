@@ -1,0 +1,19 @@
+{
+  "name": "dev-pipeline",
+  "displayName": "Dev Pipeline",
+  "version": "1.0.0",
+  "description": "Architect, coder, and tester subagents plus a pipeline skill that orchestrates them into a plan, implement, and verify workflow.",
+  "author": {
+    "name": "Alejo Gaisser",
+    "url": "https://github.com/alejogaisser"
+  },
+  "homepage": "https://github.com/alejogaisser/gaisser-agents#dev-pipeline",
+  "repository": "https://github.com/alejogaisser/gaisser-agents",
+  "license": "Apache-2.0",
+  "keywords": [
+    "planning",
+    "implementation",
+    "testing",
+    "orchestration"
+  ]
+}

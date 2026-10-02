@@ -1,0 +1,7 @@
+{
+  "name": "tester",
+  "description": "Verifies freshly implemented changes by writing and running tests, then reports what passed, what failed with the relevant error, and what could not be tested. Use after the coder finishes. Does not fix production code.",
+  "capabilities": ["read", "edit", "write", "shell"],
+  "model": "standard",
+  "effort": "medium"
+}

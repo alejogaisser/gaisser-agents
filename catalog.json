@@ -1,0 +1,25 @@
+{
+  "marketplace": {
+    "name": "gaisser-agents",
+    "description": "Curated subagents and skills grouped into installable plugins, starting with a plan, implement, and verify dev pipeline.",
+    "owner": {
+      "name": "Alejo Gaisser",
+      "url": "https://github.com/alejogaisser"
+    },
+    "repository": "https://github.com/alejogaisser/gaisser-agents",
+    "license": "Apache-2.0"
+  },
+  "plugins": [
+    {
+      "name": "dev-pipeline",
+      "displayName": "Dev Pipeline",
+      "version": "1.0.0",
+      "description": "Architect, coder, and tester subagents plus a pipeline skill that orchestrates them into a plan, implement, and verify workflow.",
+      "category": "development",
+      "keywords": ["planning", "implementation", "testing", "orchestration"],
+      "color": "blue",
+      "agents": ["architect", "coder", "tester"],
+      "skills": ["pipeline"]
+    }
+  ]
+}

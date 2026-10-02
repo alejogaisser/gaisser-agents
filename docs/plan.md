@@ -1446,3 +1446,18 @@ For each of **Antigravity, GitHub Copilot, Cursor, Gemini CLI, OpenCode**:
 - A `review-changes` skill (code-reviewer + security-auditor in parallel).
 - Delegation evals (`claude plugin eval`), Claude plugin `relevance` signals.
 - Issue and PR templates, CODE_OF_CONDUCT, a README catalog generator.
+
+---
+
+## 18. ADDENDUM (main session, owner request 2026-10-02): Codex plugin packaging moves into Phase 1
+
+The owner wants both tools distributed as plugin + skills. This overrides the "Codex plugin packaging" backlog item in section 17 and the out-of-scope line in section 1.
+
+- Before writing it, fetch https://learn.chatgpt.com/codex/plugins and https://developers.openai.com/plugins/build/plugins (fallback: the openai/codex GitHub repo docs) and confirm the exact plugin.json schema, the `.codex-plugin/plugin.json` option, and the `.agents/plugins/marketplace.json` schema (fields, how `source` paths are written). Follow the docs over this addendum where they differ, and report what you verified with URLs. If the docs cannot be reached, implement per C8 and report it as unverified.
+- `build.py` gains a Codex plugin adapter that generates (committed, covered by `--check`):
+  - `dist/codex-plugin/dev-pipeline/plugin.json` (Agent Plugins schema: name, version, description, author, license Apache-2.0, homepage) and `.codex-plugin/plugin.json` only if the docs require it;
+  - `dist/codex-plugin/dev-pipeline/skills/pipeline/SKILL.md` (same content as the Codex skill in `dist/codex/`);
+  - repo-root `.agents/plugins/marketplace.json` named `gaisser-agents`, listing `dev-pipeline` pointing to `./dist/codex-plugin/dev-pipeline`.
+- Codex custom agents cannot ride in a plugin (C8): they still come from `install.sh/ps1 --target codex`. The installed skill and the plugin skill have the same name `pipeline`; README must say "use the plugin OR the installer's skill, not both" (the installer's codex target still installs agents; add a `--agents-only`/`-AgentsOnly` flag that skips the skill for plugin users).
+- README "Install for Codex": (1) `codex plugin marketplace add alejogaisser/gaisser-agents` + install `dev-pipeline` (skill), (2) run the installer with `--target codex --agents-only` for the subagents. Mention the single-session fallback works with the plugin alone.
+- Update file counts, CONTRIBUTING, step 11 expected `git status`, and add tester checks: Codex plugin outputs generated and in sync, marketplace source path exists, `--agents-only` installs no skill.
