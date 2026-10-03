@@ -13,10 +13,10 @@ Copies the catalog's agents and skills into a Claude Code and/or Codex setup.
 Existing files are never overwritten silently.
 
 Options:
-  -l, --list             List the available plugins for the selected target(s) and exit
+  -l, --list             List the available teams (plugins) for the selected target(s) and exit
   -t, --target T         claude (default), codex, or all
-  -p, --plugin NAME      Plugin to install (repeatable, or comma-separated)
-  -a, --all              Install every plugin
+  -p, --plugin NAME      Team (plugin) to install (repeatable, or comma-separated)
+  -a, --all              Install every team
   -b, --base DIR         Home-like root to install into (default: your home folder)
   -A, --agents-only      Codex only: install the agents but not the skill
                          (use this when you installed the Codex plugin)
@@ -225,6 +225,15 @@ do_backup() {
   mv "$1" "$2" || return 1
 }
 
+# same_dir A B: succeed when the two folders hold the same files with the same content.
+same_dir() {
+  if command -v diff >/dev/null 2>&1; then
+    diff -r -q "$1" "$2" >/dev/null 2>&1
+  else
+    [ -f "$2/SKILL.md" ] && cmp -s "$1/SKILL.md" "$2/SKILL.md"
+  fi
+}
+
 # install_item TARGET KIND LABEL SRC DST COMPARE_SRC COMPARE_DST BACKUP_ROOT
 install_item() {
   local target="$1" kind="$2" label="$3" src="$4" dst="$5" csrc="$6" cdst="$7" broot="$8"
@@ -236,7 +245,8 @@ install_item() {
     else
       say failed "$target" "$label" "copy failed"; FAILED=1
     fi
-  elif [ -f "$cdst" ] && cmp -s "$csrc" "$cdst"; then
+  elif { [ "$kind" = "skill" ] && [ -d "$dst" ] && same_dir "$src" "$dst"; } \
+    || { [ "$kind" != "skill" ] && [ -f "$cdst" ] && cmp -s "$csrc" "$cdst"; }; then
     say unchanged "$target" "$label"; C_UNCHANGED=$((C_UNCHANGED + 1))
   elif [ "$FORCE" -eq 0 ]; then
     say skipped "$target" "$label" "differs from this repo's version (use --force to overwrite)"
@@ -265,7 +275,10 @@ for t in $TARGETS; do
   ext="$(agent_ext "$t")"
   for p in $SELECTED; do
     pdir="$(src_root "$t")/$p"
-    [ -d "$pdir" ] || continue
+    if [ ! -d "$pdir" ]; then
+      say "n/a" "$t" "$p" "not available for this tool"
+      continue
+    fi
     if [ -d "$pdir/agents" ]; then
       for f in "$pdir/agents"/*."$ext"; do
         [ -f "$f" ] || continue
@@ -287,8 +300,8 @@ done
 if [ "$DRY" -eq 0 ] && [ "$FAILED" -eq 0 ]; then
   echo
   echo "Restart the tool (or start a new session) to load new agents and skills."
-  echo "Claude manual installs are not namespaced: use 'architect', not 'dev-pipeline:architect'; the skill is /pipeline."
-  echo "In Codex the skill is invoked as \$pipeline."
+  echo "Claude manual installs are not namespaced: use 'architect', not 'dev-team:architect', and call a team with its skill, for example /dev-team."
+  echo "In Codex, call a team with its skill, for example \$dev-team."
   echo "To update later: git pull, then re-run this script with --force."
 fi
 

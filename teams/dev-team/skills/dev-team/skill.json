@@ -1,0 +1,6 @@
+{
+  "name": "dev-team",
+  "description": "Calls the dev team: orchestrates the architect, coder, and tester subagents to plan, implement, and verify a code change, with a structured handoff and testable acceptance criteria, a review gate, optional checkpoints, failure routing with at most 2 fix cycles, project decision records and lessons learned, and a five-section final report. Use when the user calls the dev team or asks, in any language, for the full flow, for checkpoints or step-by-step work, for a single role such as \"architect only\" or \"just the tester\", or for a non-trivial feature, refactor, or multi-file bug fix.",
+  "argumentHint": "[task] [with checkpoints]",
+  "agents": ["architect", "coder", "tester"]
+}

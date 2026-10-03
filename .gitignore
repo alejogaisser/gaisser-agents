@@ -23,3 +23,9 @@ CLAUDE.local.md
 
 # Working artifacts of the dev pipeline
 docs/plan-*.md
+
+# Fonts: never commit; teams load fonts from the user's project
+*.ttf
+*.otf
+*.woff
+*.woff2
