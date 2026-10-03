@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "dev-pipeline",
+      "name": "dev-team",
       "source": {
         "source": "local",
-        "path": "./dist/codex-plugin/dev-pipeline"
+        "path": "./dist/codex-plugin/dev-team"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Validate the tool-neutral sources and generate the per-tool outputs.
 
-Sources: catalog.json, agents/<name>/{agent.json,prompt.md},
-skills/<name>/{skill.json,instructions.md}.
+Sources: catalog.json plus teams/<team>/{team.json,
+agents/<name>/{agent.json,prompt.md}, skills/<name>/{skill.json,instructions.md}}.
+One team folder is one plugin.
 
 Generated (committed, never edited by hand):
   .claude-plugin/marketplace.json            Claude Code marketplace
-  dist/claude-code/<plugin>/...              Claude Code plugin
-  dist/codex/<plugin>/...                    Codex custom agents (TOML) + skill
-  dist/codex-plugin/<plugin>/...             Codex plugin (skills only)
+  dist/claude-code/<team>/...                Claude Code plugin
+  dist/codex/<team>/...                      Codex custom agents (TOML) + skill
+  dist/codex-plugin/<team>/...               Codex plugin (skills only)
   .agents/plugins/marketplace.json           Codex marketplace
 
 Usage: py -3 scripts/build.py [--root PATH] [--check] [--base-ref REF]
@@ -75,14 +76,26 @@ CLAUDE_MARKETPLACE_PATH = ".claude-plugin/marketplace.json"
 CODEX_MARKETPLACE_PATH = ".agents/plugins/marketplace.json"
 CODEX_PLUGIN_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
 
-CATALOG_KEYS = {"marketplace", "plugins"}
+TEAMS_DIR = "teams"
+LEGACY_SOURCE_DIRS = ["agents", "skills"]
+TEAM_NAME_RE = r"^[a-z0-9]+(-[a-z0-9]+)*-team$"
+AGENT_PREFIX_RE = r"^[a-z0-9]+(-[a-z0-9]+)*-$"
+TARGETS = ["claude-code", "codex"]  # canonical order; equal to the dist/ folder names
+CATALOG_KEYS = {"marketplace", "teams", "renames"}
+CATALOG_REQUIRED = {"marketplace", "teams"}
 MARKETPLACE_KEYS = {"name", "description", "owner", "repository", "license"}
-PLUGIN_KEYS = {"name", "displayName", "version", "description", "category",
-               "keywords", "color", "agents", "skills"}
+TEAM_KEYS = {"name", "displayName", "version", "description", "category",
+             "keywords", "color", "targets", "agentPrefix"}
+TEAM_REQUIRED = TEAM_KEYS - {"agentPrefix"}
+AGENT_FILES = {"agent.json", "prompt.md"}
+SKILL_FILES = {"skill.json", "instructions.md"}
 AGENT_KEYS = {"name", "description", "capabilities", "model", "effort"}
 AGENT_REQUIRED = {"name", "description", "capabilities", "model"}
 SKILL_KEYS = {"name", "description", "argumentHint", "modelInvocable", "agents"}
 SKILL_REQUIRED = {"name", "description"}
+SKILL_SUBDIRS = {"assets", "references"}
+SKILL_FILE_RE = r"^[a-z0-9]+(-[a-z0-9]+)*\.(md|txt|json|csv|yaml|yml)$"
+SKILL_FILE_MAX_BYTES = 65536
 
 # Findings on these paths are reported but do not block writing (step 6 of the plan).
 DEFERRED_PATHS = {"README.md"} | set(ASCII_ONLY)
@@ -192,6 +205,11 @@ def semver_tuple(version):
     return tuple(int(x) for x in version.split("."))
 
 
+def codex_agent_name(name):
+    """Codex identifies an agent by name; hyphens become underscores (snake_case)."""
+    return name.replace("-", "_")
+
+
 # ---------------------------------------------------------------------------
 # Loading and validating sources
 # ---------------------------------------------------------------------------
@@ -200,7 +218,7 @@ def _validate_catalog(catalog, findings):
     if not isinstance(catalog, dict):
         err(findings, path, "must be a JSON object")
         return False
-    if not check_keys(findings, path, catalog, CATALOG_KEYS):
+    if not check_keys(findings, path, catalog, CATALOG_KEYS, CATALOG_REQUIRED):
         return False
     mp = catalog["marketplace"]
     if not isinstance(mp, dict):
@@ -230,51 +248,118 @@ def _validate_catalog(catalog, findings):
     if not (isinstance(mp.get("license"), str) and mp["license"].strip()):
         err(findings, path, "marketplace license must be non-empty")
 
-    plugins = catalog["plugins"]
-    if not isinstance(plugins, list) or not plugins:
-        err(findings, path, "'plugins' must be a non-empty list")
+    teams = catalog["teams"]
+    if not (isinstance(teams, list) and teams and all(valid_name(t) for t in teams)):
+        err(findings, path, "'teams' must be a non-empty list of team names")
         return False
     seen = set()
-    for i, plugin in enumerate(plugins):
-        where = "plugins[%d]" % i
-        if not isinstance(plugin, dict):
-            err(findings, path, "%s must be an object" % where)
-            return False
-        if not check_keys(findings, path, plugin, PLUGIN_KEYS):
-            continue
-        pname = plugin["name"]
-        where = "plugin '%s'" % pname
-        if not valid_name(pname):
-            err(findings, path, "%s: name must be kebab-case, at most 64 chars" % where)
-        else:
-            if "claude" in pname or "anthropic" in pname:
-                err(findings, path, "%s: name must not contain 'claude' or 'anthropic'" % where)
-            if pname.startswith("cc-plugin-"):
-                err(findings, path, "%s: name must not start with 'cc-plugin-'" % where)
-        if pname in seen:
-            err(findings, path, "%s: duplicate plugin name" % where)
-        seen.add(pname)
-        if not (isinstance(plugin["version"], str) and re.match(SEMVER_RE, plugin["version"])):
-            err(findings, path, "%s: version must be semver (MAJOR.MINOR.PATCH)" % where)
-        if not single_line(plugin["description"]):
-            err(findings, path, "%s: description must be a non-empty single line" % where)
-        if not single_line(plugin["displayName"]):
-            err(findings, path, "%s: displayName must be a non-empty single line" % where)
-        if not (isinstance(plugin["category"], str) and re.match(NAME_RE, plugin["category"])):
-            err(findings, path, "%s: category must be kebab-case" % where)
-        kws = plugin["keywords"]
-        if not (isinstance(kws, list) and kws and all(
-                isinstance(k, str) and re.match(NAME_RE, k) for k in kws)):
-            err(findings, path, "%s: keywords must be a non-empty list of kebab-case strings" % where)
-        if plugin["color"] not in COLORS:
-            err(findings, path, "%s: color must be one of %s" % (where, sorted(COLORS)))
-        ag, sk = plugin["agents"], plugin["skills"]
-        if not (isinstance(ag, list) and isinstance(sk, list)
-                and all(isinstance(x, str) for x in ag + sk)):
-            err(findings, path, "%s: agents and skills must be lists of names" % where)
-        elif not ag and not sk:
-            err(findings, path, "%s: needs at least one agent or skill" % where)
+    for team in teams:
+        if team in seen:
+            err(findings, path, "duplicate team '%s'" % team)
+        seen.add(team)
+    if "renames" in catalog:
+        _validate_renames(catalog["renames"], teams, findings)
     return not any(f.level == "ERROR" and f.path == path for f in findings)
+
+
+def _validate_renames(renames, teams, findings):
+    path = "catalog.json"
+    if not isinstance(renames, dict):
+        err(findings, path, "'renames' must be an object")
+        return
+    for old in renames:
+        if not valid_name(old):
+            err(findings, path, "renames: '%s' is not a valid plugin name" % old)
+        elif old in teams:
+            err(findings, path, "renames: '%s' is a current team" % old)
+    for old, new in renames.items():
+        if not valid_name(old) or old in teams:
+            continue
+        if new is not None and not valid_name(new):
+            err(findings, path, "renames: target of '%s' must be a plugin name or null" % old)
+            continue
+        seen = {old}
+        cur = new
+        while cur is not None and cur not in teams:
+            if cur not in renames:
+                err(findings, path, "renames: '%s' chain does not resolve" % old)
+                break
+            if cur in seen:
+                err(findings, path, "renames: cycle at '%s'" % old)
+                break
+            seen.add(cur)
+            cur = renames[cur]
+            if cur is not None and not valid_name(cur):
+                err(findings, path, "renames: target of '%s' must be a plugin name or null" % old)
+                break
+
+
+def _validate_team(meta, team, findings):
+    """Validate teams/<team>/team.json. Returns the agentPrefix (or None)."""
+    path = "%s/%s/team.json" % (TEAMS_DIR, team)
+    if not isinstance(meta, dict):
+        err(findings, path, "must be a JSON object")
+        return None
+    check_keys(findings, path, meta, TEAM_KEYS, TEAM_REQUIRED)
+    name = meta.get("name")
+    where = "team '%s'" % name
+    if name != team:
+        err(findings, path, "name '%s' must equal the folder name '%s'" % (name, team))
+    if not (isinstance(name, str) and len(name) <= 64 and re.match(TEAM_NAME_RE, name)):
+        err(findings, path, "team name must be kebab-case and end with '-team'")
+    elif "claude" in name or "anthropic" in name:
+        err(findings, path, "%s: name must not contain 'claude' or 'anthropic'" % where)
+    if isinstance(name, str) and name.startswith("cc-plugin-"):
+        err(findings, path, "%s: name must not start with 'cc-plugin-'" % where)
+    if not (isinstance(meta.get("version"), str) and re.match(SEMVER_RE, meta["version"])):
+        err(findings, path, "%s: version must be semver (MAJOR.MINOR.PATCH)" % where)
+    if not single_line(meta.get("description")):
+        err(findings, path, "%s: description must be a non-empty single line" % where)
+    if not single_line(meta.get("displayName")):
+        err(findings, path, "%s: displayName must be a non-empty single line" % where)
+    if not (isinstance(meta.get("category"), str) and re.match(NAME_RE, meta["category"])):
+        err(findings, path, "%s: category must be kebab-case" % where)
+    kws = meta.get("keywords")
+    if not (isinstance(kws, list) and kws and all(
+            isinstance(k, str) and re.match(NAME_RE, k) for k in kws)):
+        err(findings, path, "%s: keywords must be a non-empty list of kebab-case strings" % where)
+    if not (isinstance(meta.get("color"), str) and meta["color"] in COLORS):
+        err(findings, path, "%s: color must be one of %s" % (where, sorted(COLORS)))
+    targets = meta.get("targets")
+    if not (isinstance(targets, list) and targets and all(isinstance(t, str) for t in targets)
+            and len(set(targets)) == len(targets) and all(t in TARGETS for t in targets)):
+        err(findings, path, "targets must be a non-empty list of unique values from %s" % TARGETS)
+    prefix = meta.get("agentPrefix")
+    if "agentPrefix" in meta:
+        if not (isinstance(prefix, str) and re.match(AGENT_PREFIX_RE, prefix)):
+            err(findings, path, "agentPrefix must be kebab-case and end with '-'")
+            prefix = None
+    return prefix
+
+
+def _scan_team(root, team, findings):
+    """Reject files outside the allowed layout. Returns (agent_names, skill_names)."""
+    base = root / TEAMS_DIR / team
+    for p in sorted(base.rglob("*")):
+        if not p.is_file() or p.name in JUNK_FILES:
+            continue
+        parts = p.relative_to(base).parts
+        ok = (parts == ("team.json",)
+              or (len(parts) == 3 and parts[0] == "agents" and parts[2] in AGENT_FILES)
+              or (len(parts) == 3 and parts[0] == "skills" and parts[2] in SKILL_FILES)
+              or (len(parts) == 4 and parts[0] == "skills" and parts[2] in SKILL_SUBDIRS
+                  and re.match(SKILL_FILE_RE, parts[3]) is not None))
+        if not ok:
+            err(findings, "%s/%s/%s" % (TEAMS_DIR, team, "/".join(parts)),
+                "unexpected file (a team folder may contain only team.json, "
+                "agents/<name>/{agent.json,prompt.md}, "
+                "skills/<name>/{skill.json,instructions.md}, and "
+                "skills/<name>/{assets,references}/<file>)")
+    names = []
+    for sub in ("agents", "skills"):
+        d = base / sub
+        names.append(sorted(p.name for p in d.iterdir() if p.is_dir()) if d.is_dir() else [])
+    return names[0], names[1]
 
 
 def _validate_prompt(text, caps, relpath, findings):
@@ -308,8 +393,8 @@ def _validate_prompt(text, caps, relpath, findings):
         warn(findings, relpath, "agent has 'web' but the prompt lacks the untrusted web content rule")
 
 
-def _load_agent(root, name, findings):
-    base = "agents/%s" % name
+def _load_agent(root, team, name, prefix, findings):
+    base = "%s/%s/agents/%s" % (TEAMS_DIR, team, name)
     meta = read_json(root, base + "/agent.json", findings)
     prompt = read_text(root, base + "/prompt.md", findings)
     if meta is None or not isinstance(meta, dict):
@@ -323,7 +408,9 @@ def _load_agent(root, name, findings):
         err(findings, path, "name '%s' must equal the folder name '%s'" % (mname, name))
     if not valid_name(mname):
         err(findings, path, "name must be kebab-case, at most 64 chars")
-    if name in RESERVED_AGENT_NAMES:
+    if prefix and not name.startswith(prefix):
+        err(findings, path, "agent name '%s' must start with the team's agentPrefix '%s'" % (name, prefix))
+    if name in RESERVED_AGENT_NAMES or codex_agent_name(name) in RESERVED_AGENT_NAMES:
         err(findings, path, "'%s' is a reserved Codex name" % name)
     desc = meta.get("description")
     if not single_line(desc):
@@ -333,30 +420,31 @@ def _load_agent(root, name, findings):
     elif "Use " not in desc:
         err(findings, path, "description must contain 'Use ' (when to use the agent)")
     caps = meta.get("capabilities")
-    caps_ok = (isinstance(caps, list) and caps and len(set(caps)) == len(caps)
-               and all(c in CAPABILITIES for c in caps))
-    if not caps_ok:
-        err(findings, path, "capabilities must be a non-empty list of unique values from %s" % CAPABILITIES)
+    caps_ok = (isinstance(caps, list) and caps and all(isinstance(c, str) for c in caps)
+               and len(set(caps)) == len(caps) and all(c in CAPABILITIES for c in caps))
+    if caps == "inherit":
+        caps = ["web"]  # inherited tools include web access, so the web rule applies
+    elif not caps_ok:
+        err(findings, path,
+            'capabilities must be "inherit" or a non-empty list of unique values from %s' % CAPABILITIES)
         caps = []
     elif "read" not in caps:
         err(findings, path, "capabilities must include 'read'")
     tier = meta.get("model")
-    if tier not in TIERS:
+    if not (isinstance(tier, str) and tier in TIERS):
         err(findings, path, "model must be one of %s" % sorted(TIERS))
     effort = meta.get("effort")
-    if effort is not None and effort not in EFFORTS:
+    if effort is not None and not (isinstance(effort, str) and effort in EFFORTS):
         err(findings, path, "effort must be one of %s" % sorted(EFFORTS))
     if tier == "fast" and "effort" in meta:
         err(findings, path, "tier 'fast' must not set effort")
-    elif tier in TIERS and tier != "fast" and "effort" not in meta:
-        err(findings, path, "effort is required unless model is 'fast'")
     if prompt is not None:
         _validate_prompt(prompt, caps if isinstance(caps, list) else [], base + "/prompt.md", findings)
-    return {"meta": meta, "prompt": prompt}
+    return {"meta": meta, "prompt": prompt, "team": team}
 
 
-def _load_skill(root, name, findings):
-    base = "skills/%s" % name
+def _load_skill(root, team, name, findings):
+    base = "%s/%s/skills/%s" % (TEAMS_DIR, team, name)
     meta = read_json(root, base + "/skill.json", findings)
     text = read_text(root, base + "/instructions.md", findings)
     path = base + "/skill.json"
@@ -377,11 +465,8 @@ def _load_skill(root, name, findings):
         err(findings, path, "description has %d chars; expected 40 to 1024" % len(desc))
     if "argumentHint" in meta and not isinstance(meta["argumentHint"], str):
         err(findings, path, "argumentHint must be a string")
-    if "modelInvocable" in meta:
-        if not isinstance(meta["modelInvocable"], bool):
-            err(findings, path, "modelInvocable must be a boolean")
-        elif meta["modelInvocable"] is False:
-            warn(findings, path, "manual-only invocation is not generated for Codex yet")
+    if "modelInvocable" in meta and not isinstance(meta["modelInvocable"], bool):
+        err(findings, path, "modelInvocable must be a boolean")
     agents = meta.get("agents", [])
     if not (isinstance(agents, list) and all(isinstance(a, str) for a in agents)):
         err(findings, path, "agents must be a list of agent names")
@@ -404,48 +489,125 @@ def _load_skill(root, name, findings):
         n = len(body.rstrip("\n").split("\n"))
         if n > 500:
             err(findings, ipath, "instructions have %d lines; the limit is 500" % n)
-    return {"meta": meta, "instructions": text}
+    files = {}
+    for sub in sorted(SKILL_SUBDIRS):
+        d = root / base / sub
+        if not d.is_dir():
+            continue
+        for p in sorted(d.iterdir()):
+            if not p.is_file() or p.name in JUNK_FILES or re.match(SKILL_FILE_RE, p.name) is None:
+                continue  # reported as 'unexpected file' by _scan_team
+            fpath = "%s/%s/%s" % (base, sub, p.name)
+            try:
+                size = p.stat().st_size
+            except OSError as exc:
+                err(findings, fpath, "cannot read file: %s" % exc)
+                continue
+            if size > SKILL_FILE_MAX_BYTES:
+                err(findings, fpath, "file is larger than 64 KiB")
+                continue
+            ftext = read_text(root, fpath, findings)
+            if ftext is None:
+                continue
+            if "\x00" in ftext:
+                err(findings, fpath, "file contains NUL bytes")
+                continue
+            if EMOJI_RE.search(ftext):
+                err(findings, fpath, "emoji are not allowed")
+                continue
+            files["%s/%s" % (sub, p.name)] = normalize_body(ftext)
+    return {"meta": meta, "instructions": text, "team": team, "files": files}
 
 
 def load_sources(root):
-    """Return (catalog, findings). The catalog gets '_agents' and '_skills' dicts on success."""
+    """Return (catalog, findings). The catalog gets '_teams', '_agents' and '_skills' on success."""
     root = Path(root)
     findings = []
     catalog = read_json(root, "catalog.json", findings)
     if catalog is None or not _validate_catalog(catalog, findings):
         return None, findings
+    teams = catalog["teams"]
 
-    agents_dir, skills_dir = root / "agents", root / "skills"
-    agent_folders = sorted(p.name for p in agents_dir.iterdir() if p.is_dir()) if agents_dir.is_dir() else []
-    skill_folders = sorted(p.name for p in skills_dir.iterdir() if p.is_dir()) if skills_dir.is_dir() else []
+    for d in LEGACY_SOURCE_DIRS:
+        if (root / d).exists():
+            err(findings, d + "/",
+                "legacy folder: sources now live under teams/<team>/ (see CONTRIBUTING.md)")
 
-    owners = {"agents": {}, "skills": {}}
-    for plugin in catalog["plugins"]:
-        for kind, folders in (("agents", agent_folders), ("skills", skill_folders)):
-            for item in plugin[kind]:
-                if item in owners[kind]:
-                    err(findings, "catalog.json", "%s '%s' is listed by more than one plugin" % (kind[:-1], item))
-                owners[kind][item] = plugin["name"]
-                if item not in folders:
-                    err(findings, "catalog.json", "%s '%s' has no folder under %s/" % (kind[:-1], item, kind))
-    for kind, folders in (("agents", agent_folders), ("skills", skill_folders)):
-        for folder in folders:
-            if folder not in owners[kind]:
-                err(findings, "%s/%s" % (kind, folder), "orphan folder: not listed by any plugin")
+    tdir = root / TEAMS_DIR
+    if tdir.is_dir():
+        for p in sorted(tdir.iterdir()):
+            if p.name in JUNK_FILES:
+                continue
+            if p.is_dir():
+                if p.name not in teams:
+                    err(findings, "%s/%s" % (TEAMS_DIR, p.name),
+                        "orphan team folder: not listed in catalog.json teams")
+            else:
+                err(findings, "%s/%s" % (TEAMS_DIR, p.name),
+                    "unexpected file (only team folders belong directly under teams/)")
 
-    loaded_agents, loaded_skills = {}, {}
-    for name in agent_folders:
-        data = _load_agent(root, name, findings)
-        if data is not None:
-            loaded_agents[name] = data
-    for name in skill_folders:
-        data = _load_skill(root, name, findings)
-        if data is not None:
-            loaded_skills[name] = data
-            for a in data["meta"].get("agents", []) if isinstance(data["meta"].get("agents"), list) else []:
-                if owners["agents"].get(a) != owners["skills"].get(name):
-                    err(findings, "skills/%s/skill.json" % name,
-                        "agent '%s' does not belong to the same plugin as the skill" % a)
+    loaded_teams, loaded_agents, loaded_skills = {}, {}, {}
+    owners = {"agent": {}, "skill": {}}
+    for team in teams:
+        if not (tdir / team).is_dir():
+            err(findings, "catalog.json", "team '%s' has no folder under teams/" % team)
+            continue
+        agent_names, skill_names = _scan_team(root, team, findings)
+        tmeta = read_json(root, "%s/%s/team.json" % (TEAMS_DIR, team), findings)
+        if tmeta is None:
+            continue
+        prefix = _validate_team(tmeta, team, findings)
+        agents, skills = {}, {}
+        for name in agent_names:
+            data = _load_agent(root, team, name, prefix, findings)
+            if data is not None:
+                agents[name] = data
+        for name in skill_names:
+            data = _load_skill(root, team, name, findings)
+            if data is not None:
+                skills[name] = data
+        loaded_teams[team] = {"meta": tmeta if isinstance(tmeta, dict) else {},
+                              "agents": agent_names, "skills": skill_names}
+        for kind, names in (("agent", agent_names), ("skill", skill_names)):
+            for n in names:
+                owners[kind].setdefault(n, []).append(team)
+        loaded_agents.update(agents)
+        loaded_skills.update(skills)
+
+        # Team rules.
+        tpath = "%s/%s" % (TEAMS_DIR, team)
+        if not agent_names:
+            err(findings, tpath, "team '%s' needs at least one agent" % team)
+        if team not in skill_names:
+            err(findings, tpath, "team '%s' has no entry skill skills/%s/" % (team, team))
+        for sname, sdata in skills.items():
+            listed = sdata["meta"].get("agents", [])
+            if not isinstance(listed, list):
+                continue
+            for a in listed:
+                if a not in agent_names:
+                    err(findings, "%s/skills/%s/skill.json" % (tpath, sname),
+                        "agent '%s' does not belong to the same team as the skill" % a)
+        ttargets = tmeta.get("targets") if isinstance(tmeta, dict) else None
+        if isinstance(ttargets, list) and "codex" in ttargets:
+            for sname, sdata in skills.items():
+                if sdata["meta"].get("modelInvocable") is False:
+                    warn(findings, "%s/skills/%s/skill.json" % (tpath, sname),
+                         "manual-only invocation is not generated for Codex yet")
+        entry = skills.get(team)
+        if entry is not None and isinstance(entry["meta"].get("agents", []), list):
+            for a in agent_names:
+                if a not in entry["meta"].get("agents", []):
+                    warn(findings, "%s/skills/%s/skill.json" % (tpath, team),
+                         "agent '%s' is not referenced by the entry skill" % a)
+
+    for kind in ("agent", "skill"):
+        for n, ts in sorted(owners[kind].items()):
+            if len(ts) > 1:
+                err(findings, "catalog.json", "%s '%s' is defined by more than one team (%s)"
+                    % (kind, n, ", ".join(ts)))
+
+    catalog["_teams"] = loaded_teams
     catalog["_agents"] = loaded_agents
     catalog["_skills"] = loaded_skills
     return catalog, findings
@@ -459,9 +621,9 @@ def check_docs(root, catalog):
     if readme is not None and catalog is not None:
         mp = catalog["marketplace"]
         names = []
-        for plugin in catalog["plugins"]:
-            names.append(plugin["name"])
-            names.extend(plugin["agents"])
+        for team in catalog["teams"]:
+            names.append(team)
+            names.extend(catalog.get("_teams", {}).get(team, {}).get("agents", []))
         for name in names:
             if "`%s`" % name not in readme:
                 err(findings, "README.md", "must mention `%s` wrapped in backticks" % name)
@@ -494,7 +656,7 @@ def _render_skill_body(text, plugin_name, tool):
     def sub(m):
         if tool == "claude":
             return "`%s:%s`" % (plugin_name, m.group(1))
-        return "`%s`" % m.group(1)
+        return "`%s`" % codex_agent_name(m.group(1))
 
     return re.sub(TOKEN_RE, sub, body)
 
@@ -515,104 +677,131 @@ def render_outputs(catalog):
     owner = dict(mp["owner"])
     claude_entries, codex_entries = [], []
 
-    for plugin in catalog["plugins"]:
-        pname = plugin["name"]
-        cbase = "dist/claude-code/%s" % pname
-        xbase = "dist/codex/%s" % pname
-        pbase = "dist/codex-plugin/%s" % pname
+    for team in catalog["teams"]:
+        tinfo = catalog["_teams"][team]
+        tmeta = tinfo["meta"]
+        targets = tmeta["targets"]
+        cbase = "dist/claude-code/%s" % team
+        xbase = "dist/codex/%s" % team
+        pbase = "dist/codex-plugin/%s" % team
 
-        claude_entries.append({
-            "name": pname,
-            "source": "./" + cbase,
-            "description": plugin["description"],
-            "category": plugin["category"],
-            "tags": plugin["keywords"],
-        })
-        out[cbase + "/.claude-plugin/plugin.json"] = dump_json({
-            "name": pname,
-            "displayName": plugin["displayName"],
-            "version": plugin["version"],
-            "description": plugin["description"],
-            "author": owner,
-            "homepage": repo + "#" + pname,
-            "repository": repo,
-            "license": lic,
-            "keywords": plugin["keywords"],
-        })
+        if "claude-code" in targets:
+            claude_entries.append({
+                "name": team,
+                "source": "./" + cbase,
+                "description": tmeta["description"],
+                "category": tmeta["category"],
+                "tags": tmeta["keywords"],
+            })
+            out[cbase + "/.claude-plugin/plugin.json"] = dump_json({
+                "name": team,
+                "displayName": tmeta["displayName"],
+                "version": tmeta["version"],
+                "description": tmeta["description"],
+                "author": owner,
+                "homepage": repo + "#" + team,
+                "repository": repo,
+                "license": lic,
+                "keywords": tmeta["keywords"],
+            })
 
-        for aname in plugin["agents"]:
+        for aname in tinfo["agents"]:
             meta = catalog["_agents"][aname]["meta"]
             body = normalize_body(catalog["_agents"][aname]["prompt"])
             caps = meta["capabilities"]
+            inherit = caps == "inherit"
             tier = meta["model"]
             effort = meta.get("effort") if tier != "fast" else None
 
-            fm = ["---", "name: " + aname, "description: " + dq(meta["description"]),
-                  "tools: " + ", ".join(claude_tools(caps)), "model: " + TIERS[tier]]
-            if effort:
-                fm.append("effort: " + effort)
-            fm.append("color: " + plugin["color"])
-            fm.append("---")
-            out[cbase + "/agents/%s.md" % aname] = "\n".join(fm) + "\n\n" + body
+            if "claude-code" in targets:
+                fm = ["---", "name: " + aname, "description: " + dq(meta["description"])]
+                if inherit:
+                    fm.append("disallowedTools: Agent")
+                else:
+                    fm.append("tools: " + ", ".join(claude_tools(caps)))
+                fm.append("model: " + TIERS[tier])
+                if effort:
+                    fm.append("effort: " + effort)
+                fm.append("color: " + tmeta["color"])
+                fm.append("---")
+                out[cbase + "/agents/%s.md" % aname] = "\n".join(fm) + "\n\n" + body
 
-            sandbox = "workspace-write" if CODEX_WRITE_CAPS & set(caps) else "read-only"
-            toml = [
-                "# Generated by scripts/build.py from agents/%s/ in %s. Do not edit." % (aname, repo),
-                "# License: %s. See the NOTICE file in the repository." % lic,
-                "name = " + dq(aname),
-                "description = " + dq(meta["description"]),
-            ]
-            if effort:
-                toml.append("model_reasoning_effort = " + dq(effort))
-            toml.append("sandbox_mode = " + dq(sandbox))
-            toml.append('developer_instructions = """')
-            out[xbase + "/agents/%s.toml" % aname] = "\n".join(toml) + "\n" + toml_escape_ml(body) + '"""\n'
+            if "codex" in targets:
+                sandbox = None
+                if not inherit:
+                    sandbox = "workspace-write" if CODEX_WRITE_CAPS & set(caps) else "read-only"
+                toml = [
+                    "# Generated by scripts/build.py from teams/%s/agents/%s/ in %s. Do not edit."
+                    % (team, aname, repo),
+                    "# License: %s. See the NOTICE file in the repository." % lic,
+                    "name = " + dq(codex_agent_name(aname)),
+                    "description = " + dq(meta["description"]),
+                ]
+                if effort:
+                    toml.append("model_reasoning_effort = " + dq(effort))
+                if sandbox:
+                    toml.append("sandbox_mode = " + dq(sandbox))
+                toml.append('developer_instructions = """')
+                out[xbase + "/agents/%s.toml" % aname] = (
+                    "\n".join(toml) + "\n" + toml_escape_ml(body) + '"""\n')
 
-        for sname in plugin["skills"]:
+        for sname in tinfo["skills"]:
             meta = catalog["_skills"][sname]["meta"]
             text = catalog["_skills"][sname]["instructions"]
+            sfiles = catalog["_skills"][sname].get("files", {})
 
-            fm = ["---", "name: " + sname, "description: " + dq(meta["description"])]
-            if meta.get("argumentHint"):
-                fm.append("argument-hint: " + dq(meta["argumentHint"]))
-            if meta.get("modelInvocable") is False:
-                fm.append("disable-model-invocation: true")
-            fm.append("license: " + lic)
-            fm.append("---")
-            out[cbase + "/skills/%s/SKILL.md" % sname] = (
-                "\n".join(fm) + "\n\n" + _render_skill_body(text, pname, "claude"))
+            if "claude-code" in targets:
+                fm = ["---", "name: " + sname, "description: " + dq(meta["description"])]
+                if meta.get("argumentHint"):
+                    fm.append("argument-hint: " + dq(meta["argumentHint"]))
+                if meta.get("modelInvocable") is False:
+                    fm.append("disable-model-invocation: true")
+                fm.append("license: " + lic)
+                fm.append("---")
+                out[cbase + "/skills/%s/SKILL.md" % sname] = (
+                    "\n".join(fm) + "\n\n" + _render_skill_body(text, team, "claude"))
+                for frel, ftext in sfiles.items():
+                    out[cbase + "/skills/%s/%s" % (sname, frel)] = ftext
 
-            codex_skill = "\n".join(
-                ["---", "name: " + sname, "description: " + dq(meta["description"]),
-                 "license: " + lic, "---"]) + "\n\n" + _render_skill_body(text, pname, "codex")
-            out[xbase + "/skills/%s/SKILL.md" % sname] = codex_skill
-            out[pbase + "/skills/%s/SKILL.md" % sname] = codex_skill
+            if "codex" in targets:
+                codex_skill = "\n".join(
+                    ["---", "name: " + sname, "description: " + dq(meta["description"]),
+                     "license: " + lic, "---"]) + "\n\n" + _render_skill_body(text, team, "codex")
+                out[xbase + "/skills/%s/SKILL.md" % sname] = codex_skill
+                out[pbase + "/skills/%s/SKILL.md" % sname] = codex_skill
+                for frel, ftext in sfiles.items():
+                    out[xbase + "/skills/%s/%s" % (sname, frel)] = ftext
+                    out[pbase + "/skills/%s/%s" % (sname, frel)] = ftext
 
-        # Codex plugin: Agent Plugins schema, skills only (custom agents cannot ride in a plugin).
-        out[pbase + "/plugin.json"] = dump_json({
-            "$schema": CODEX_PLUGIN_SCHEMA,
-            "name": pname,
-            "version": plugin["version"],
-            "description": plugin["description"],
-            "author": owner,
-            "homepage": repo + "#" + pname,
-            "repository": repo,
-            "license": lic,
-            "keywords": plugin["keywords"],
-        })
-        codex_entries.append({
-            "name": pname,
-            "source": {"source": "local", "path": "./" + pbase},
-            "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
-            "category": plugin["category"].replace("-", " ").title(),
-        })
+        if "codex" in targets:
+            # Codex plugin: Agent Plugins schema, skills only (custom agents cannot ride in a plugin).
+            out[pbase + "/plugin.json"] = dump_json({
+                "$schema": CODEX_PLUGIN_SCHEMA,
+                "name": team,
+                "version": tmeta["version"],
+                "description": tmeta["description"],
+                "author": owner,
+                "homepage": repo + "#" + team,
+                "repository": repo,
+                "license": lic,
+                "keywords": tmeta["keywords"],
+            })
+            codex_entries.append({
+                "name": team,
+                "source": {"source": "local", "path": "./" + pbase},
+                "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+                "category": tmeta["category"].replace("-", " ").title(),
+            })
 
-    out[CLAUDE_MARKETPLACE_PATH] = dump_json({
+    claude_mp = {
         "name": mp["name"],
         "description": mp["description"],
         "owner": owner,
         "plugins": claude_entries,
-    })
+    }
+    if catalog.get("renames"):
+        claude_mp["renames"] = dict(catalog["renames"])
+    out[CLAUDE_MARKETPLACE_PATH] = dump_json(claude_mp)
     out[CODEX_MARKETPLACE_PATH] = dump_json({
         "name": mp["name"],
         "interface": {"displayName": mp["name"].replace("-", " ").title()},
@@ -633,6 +822,8 @@ def check_toml(outputs):
             err(findings, path, "generated TOML does not parse: %s" % exc)
             continue
         agent = Path(path).stem
+        if data.get("name") != codex_agent_name(agent):
+            err(findings, path, "name does not match the file name")
         prompt = outputs.get("__prompt__/" + agent)
         if prompt is not None and data.get("developer_instructions") != prompt:
             err(findings, path, "developer_instructions does not round-trip")
@@ -730,31 +921,28 @@ def check_version_bumps(root, base_ref):
         parts = line.strip().split("/")
         if len(parts) >= 4 and parts[0] == "dist":
             changed.add(parts[2])
-    if not changed:
-        return findings
-    old_raw = _git(root, "show", "%s:catalog.json" % base_ref)
-    if old_raw.returncode != 0:
-        return findings  # no catalog at the base: every plugin is new
-    try:
-        old_plugins = {p["name"]: p["version"] for p in json.loads(old_raw.stdout)["plugins"]}
-        scratch = []
-        new_catalog = read_json(root, "catalog.json", scratch)
-        new_plugins = {p["name"]: p["version"] for p in new_catalog["plugins"]}
-    except (ValueError, KeyError, TypeError):
-        raise BuildFailure("cannot read plugin versions from catalog.json")
     for name in sorted(changed):
-        if name not in old_plugins or name not in new_plugins:
+        tpath = "%s/%s/team.json" % (TEAMS_DIR, name)
+        old_raw = _git(root, "show", "%s:%s" % (base_ref, tpath))
+        if old_raw.returncode != 0:
+            continue  # new, renamed, or removed team: nothing to compare
+        new_file = root / tpath
+        if not new_file.is_file():
             continue
-        old_v, new_v = old_plugins[name], new_plugins[name]
+        try:
+            old_v = json.loads(old_raw.stdout)["version"]
+            new_v = json.loads(new_file.read_text(encoding="utf-8"))["version"]
+        except (ValueError, KeyError, TypeError, OSError):
+            raise BuildFailure("cannot read the version from %s" % tpath)
         try:
             old_t, new_t = semver_tuple(old_v), semver_tuple(new_v)
-        except ValueError:
+        except (ValueError, AttributeError):
             continue
         if new_t == old_t:
-            err(findings, "catalog.json",
+            err(findings, tpath,
                 "%s changed but its version was not bumped (%s)" % (name, new_v))
         elif new_t < old_t:
-            err(findings, "catalog.json",
+            err(findings, tpath,
                 "%s version went down (%s -> %s)" % (name, old_v, new_v))
     return findings
 
@@ -771,6 +959,10 @@ def _report(findings):
     return errors
 
 
+def _blocking(findings):
+    return [f for f in findings if f.level == "ERROR" and f.path not in DEFERRED_PATHS]
+
+
 def main(argv=None):
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -779,7 +971,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Validate sources and generate per-tool outputs.")
     parser.add_argument("--root", default=None, help="repository root (default: parent of scripts/)")
     parser.add_argument("--check", action="store_true", help="compare generated output with disk; never write")
-    parser.add_argument("--base-ref", default=None, help="also check plugin version bumps against REF")
+    parser.add_argument("--base-ref", default=None, help="also check team version bumps against REF")
     args = parser.parse_args(argv)
 
     root = Path(args.root) if args.root else Path(__file__).resolve().parent.parent
@@ -790,21 +982,22 @@ def main(argv=None):
         catalog, findings = load_sources(root)
         findings += check_docs(root, catalog)
         outputs = {}
-        if catalog is not None:
+        rendered = False
+        if catalog is not None and not _blocking(findings):
             outputs = render_outputs(catalog)
             findings += check_toml(_with_prompts(catalog, outputs))
+            rendered = True
         if args.base_ref:
             findings += check_version_bumps(root, args.base_ref)
 
         if args.check:
-            if catalog is not None:
+            if rendered:
                 findings += check_outputs(root, outputs)
             return 1 if _report(findings) else 0
 
-        blocking = [f for f in findings
-                    if f.level == "ERROR" and f.path not in DEFERRED_PATHS]
-        if catalog is None or blocking:
-            return 1 if _report(findings) or catalog is None else 0
+        if not rendered or _blocking(findings):
+            _report(findings)
+            return 1
         written, removed = write_outputs(root, outputs)
         errors = _report(findings)
         print("wrote %d file(s), removed %d stale file(s)" % (written, removed))

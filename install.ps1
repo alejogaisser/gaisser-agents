@@ -18,16 +18,16 @@ Destinations (relative to -Base):
 Exit codes: 0 success, 1 a file operation failed, 2 usage error.
 
 .PARAMETER List
-List the available plugins for the selected target(s) and exit.
+List the available teams (plugins) for the selected target(s) and exit.
 
 .PARAMETER Target
 claude (default), codex, or all.
 
 .PARAMETER Plugin
-Plugin to install. Accepts several values, or a comma-separated list.
+Team (plugin) to install. Accepts several values, or a comma-separated list.
 
 .PARAMETER All
-Install every plugin.
+Install every team.
 
 .PARAMETER Base
 Home-like root to install into. Default: your home folder. Relative paths resolve
@@ -46,7 +46,7 @@ Show what would happen without creating or changing anything.
 Show this help.
 
 .EXAMPLE
-.\install.ps1 -Target codex -Plugin dev-pipeline
+.\install.ps1 -Target codex -Plugin dev-team
 
 .EXAMPLE
 .\install.ps1 -Target all -All -Base C:\work\my-project -DryRun
@@ -211,6 +211,18 @@ function Test-SameFile([string]$a, [string]$b) {
     return ($ha -eq $hb)
 }
 
+function Test-SameFolder([string]$a, [string]$b) {
+    if (-not (Test-Path -LiteralPath $b -PathType Container)) { return $false }
+    $fa = @(Get-ChildItem -LiteralPath $a -Recurse -File | ForEach-Object { $_.FullName.Substring($a.Length).TrimStart('\', '/') } | Sort-Object)
+    $fb = @(Get-ChildItem -LiteralPath $b -Recurse -File | ForEach-Object { $_.FullName.Substring($b.Length).TrimStart('\', '/') } | Sort-Object)
+    if ($fa.Count -ne $fb.Count) { return $false }
+    for ($i = 0; $i -lt $fa.Count; $i++) {
+        if ($fa[$i] -ne $fb[$i]) { return $false }
+        if (-not (Test-SameFile (Join-Path $a $fa[$i]) (Join-Path $b $fb[$i]))) { return $false }
+    }
+    return $true
+}
+
 function Install-Item([string]$t, [string]$kind, [string]$label, [string]$src, [string]$dst,
                       [string]$csrc, [string]$cdst, [string]$broot) {
     $rec = ($kind -eq 'skill')
@@ -220,7 +232,8 @@ function Install-Item([string]$t, [string]$kind, [string]$label, [string]$src, [
             Write-Status 'installed' $t $label ''
             $script:Counts.installed++
         }
-        elseif (Test-SameFile $csrc $cdst) {
+        elseif ((($kind -eq 'skill') -and (Test-SameFolder $src $dst)) -or
+                (($kind -ne 'skill') -and (Test-SameFile $csrc $cdst))) {
             Write-Status 'unchanged' $t $label ''
             $script:Counts.unchanged++
         }
@@ -258,7 +271,10 @@ foreach ($t in $Targets) {
     $ext = Get-AgentExt $t
     foreach ($p in $Selected) {
         $pdir = Join-Path (Get-SrcRoot $t) $p
-        if (-not (Test-Path -LiteralPath $pdir)) { continue }
+        if (-not (Test-Path -LiteralPath $pdir)) {
+            Write-Status 'n/a' $t $p 'not available for this tool'
+            continue
+        }
         $adir = Join-Path $pdir 'agents'
         if (Test-Path -LiteralPath $adir) {
             foreach ($f in (Get-ChildItem -LiteralPath $adir -File | Where-Object { $_.Extension -eq $ext })) {
@@ -282,8 +298,8 @@ foreach ($t in $Targets) {
 if ((-not $DryRun) -and (-not $script:Failed)) {
     Write-Output ''
     Write-Output 'Restart the tool (or start a new session) to load new agents and skills.'
-    Write-Output "Claude manual installs are not namespaced: use 'architect', not 'dev-pipeline:architect'; the skill is /pipeline."
-    Write-Output 'In Codex the skill is invoked as $pipeline.'
+    Write-Output "Claude manual installs are not namespaced: use 'architect', not 'dev-team:architect', and call a team with its skill, for example /dev-team."
+    Write-Output 'In Codex, call a team with its skill, for example $dev-team.'
     Write-Output 'To update later: git pull, then re-run this script with -Force.'
 }
 

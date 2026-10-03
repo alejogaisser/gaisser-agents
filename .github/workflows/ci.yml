@@ -78,14 +78,14 @@ jobs:
           "$BASH_BIN" install.sh --list --target all
           "$BASH_BIN" install.sh --target all --all --base ./.ci-base-sh
           test -f ./.ci-base-sh/.claude/agents/architect.md
-          test -f ./.ci-base-sh/.claude/skills/pipeline/SKILL.md
+          test -f ./.ci-base-sh/.claude/skills/dev-team/SKILL.md
           test -f ./.ci-base-sh/.codex/agents/architect.toml
-          test -f ./.ci-base-sh/.agents/skills/pipeline/SKILL.md
+          test -f ./.ci-base-sh/.agents/skills/dev-team/SKILL.md
           out="$("$BASH_BIN" install.sh --target all --all --base ./.ci-base-sh)"
           grep -q "unchanged" <<< "$out"
           "$BASH_BIN" install.sh --target codex --all --agents-only --base ./.ci-base-sh-ao
           test -f ./.ci-base-sh-ao/.codex/agents/architect.toml
-          test ! -e ./.ci-base-sh-ao/.agents/skills/pipeline
+          test ! -e ./.ci-base-sh-ao/.agents/skills/dev-team
       - name: install.ps1 smoke test (Windows PowerShell 5.1)
         if: runner.os == 'Windows'
         shell: powershell
@@ -96,10 +96,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           if (-not (Test-Path .\.ci-base-ps\.claude\agents\architect.md)) { exit 1 }
           if (-not (Test-Path .\.ci-base-ps\.codex\agents\architect.toml)) { exit 1 }
-          if (-not (Test-Path .\.ci-base-ps\.agents\skills\pipeline\SKILL.md)) { exit 1 }
+          if (-not (Test-Path .\.ci-base-ps\.agents\skills\dev-team\SKILL.md)) { exit 1 }
           .\install.ps1 -Target codex -All -AgentsOnly -Base .\.ci-base-ps-ao
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          if (Test-Path .\.ci-base-ps-ao\.agents\skills\pipeline) { exit 1 }
+          if (Test-Path .\.ci-base-ps-ao\.agents\skills\dev-team) { exit 1 }
       - name: install.ps1 smoke test (PowerShell 7)
         if: runner.os == 'Windows'
         shell: pwsh

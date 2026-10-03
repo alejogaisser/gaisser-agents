@@ -1,0 +1,7 @@
+{
+  "name": "architect",
+  "description": "Designs the solution before any code is written and saves an implementation plan to docs/plan.md: a handoff with testable acceptance criteria, then design, risks, and steps. Keeps the project's decision records and lessons learned. Use proactively for new features, refactors, and architecture decisions. Never edits project code.",
+  "capabilities": ["read", "edit", "write", "web"],
+  "model": "deep",
+  "effort": "high"
+}
