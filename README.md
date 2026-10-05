@@ -8,7 +8,7 @@ Agent teams for Claude Code, Codex, and more. Call a team by domain: each team h
 
 | Team | Call it | Agents | Tools |
 |---|---|---|---|
-| `dev-team` | `/gaisser-agents:dev-team` (Claude Code), `$dev-team` (Codex) | `dev-architect`, `dev-coder`, `dev-tester` | Claude Code, Codex |
+| `dev-team` | `/gaisser-agents:dev-team` (Claude Code), `$gaisser-agents:dev-team` (Codex plugin) or `$dev-team` (Codex manual install) | `dev-architect`, `dev-coder`, `dev-tester` | Claude Code, Codex |
 
 The main conversation runs the team's skill and is the only one that talks to you. The subagents never talk to you and never delegate to each other.
 
@@ -63,7 +63,7 @@ Codex plugins can carry skills but not custom agents, so Codex needs two steps: 
 - Where the agents go: `~/.codex/agents/*.toml` (or `$CODEX_HOME/agents`). For a single project, add `--base <project folder>`, which installs into `.codex/agents/`.
 - Use the plugin OR the installer's skill, not both: both provide a skill named `dev-team`. Without the plugin, drop `--agents-only` and the installer also copies the skill to `~/.agents/skills/dev-team/`.
 - The single-session fallback works with the plugin alone, without the subagents.
-- Restart Codex, then use `$dev-team <task>`, or ask Codex to spawn the `dev_architect` agent.
+- Restart Codex, then use `$gaisser-agents:dev-team <task>` with the plugin, or `$dev-team <task>` with the manual install, or ask Codex to spawn the `dev_architect` agent.
 - Updating: `git pull`, then re-run the installer with `--force`; update the plugin from Codex.
 
 ## Call a team
@@ -71,15 +71,16 @@ Codex plugins can carry skills but not custom agents, so Codex needs two steps: 
 ```
 /gaisser-agents:dev-team add rate limiting to the API with checkpoints
 /dev-team add rate limiting to the API with checkpoints
+$gaisser-agents:dev-team add rate limiting to the API with checkpoints
 $dev-team add rate limiting to the API with checkpoints
 ```
 
-The first form is the full plugin-scoped name. The short `/dev-team` works while no other skill claims that name. In Codex the skill keeps its own name, `$dev-team` (verify after installing the plugin; if Codex prefixes plugin skills, the real invocation goes here).
+The first form is the full plugin-scoped name. The short `/dev-team` works while no other skill claims that name. Codex prefixes a skill that comes from a plugin, so the plugin install is `$gaisser-agents:dev-team` and the manual install, which copies a loose skill file, is `$dev-team`.
 
 Router tip for your CLAUDE.md or AGENTS.md:
 
 ```
-For non-trivial code changes, use the dev-team skill (/dev-team in Claude Code, $dev-team in Codex).
+For non-trivial code changes, use the dev-team skill (/dev-team in Claude Code, $gaisser-agents:dev-team in Codex).
 For work on a single role, name the scoped agent, for example gaisser-agents:dev-architect.
 Small changes (typos, one-line fixes) are made directly, without delegating.
 ```
@@ -116,7 +117,7 @@ Flow: `dev-architect -> review gate -> coder -> tester -> (at most 2 fix cycles)
 | Before | After |
 |---|---|
 | `/dev-team` (plugin `dev-team`) | `/gaisser-agents:dev-team` |
-| `$dev-team` | `$dev-team` |
+| `$dev-team` (plugin `dev-team`) | `$gaisser-agents:dev-team` |
 | `dev-team:architect` | `gaisser-agents:dev-architect` |
 | Codex agent `architect` | Codex agent `dev_architect` |
 
@@ -134,7 +135,7 @@ Flow: `dev-architect -> review gate -> coder -> tester -> (at most 2 fix cycles)
 | Before | After |
 |---|---|
 | `/dev-pipeline:pipeline` | `/gaisser-agents:dev-team` |
-| `$pipeline` | `$dev-team` |
+| `$pipeline` | `$gaisser-agents:dev-team` |
 | `dev-pipeline:<agent>` | `gaisser-agents:dev-<agent>` |
 
 Existing plans that carry the old marker are still overwritten.
@@ -151,7 +152,7 @@ Existing plans that carry the old marker are still overwritten.
 
 `Shell` is Bash plus PowerShell; `Web` is WebFetch plus WebSearch.
 
-Skill: `/gaisser-agents:dev-team` (short form `/dev-team`) in Claude Code and `$dev-team` in Codex. One plugin carries every team, so installing it installs all of them.
+Skill: `/gaisser-agents:dev-team` (short form `/dev-team`) in Claude Code, and `$gaisser-agents:dev-team` in Codex with the plugin or `$dev-team` with the manual install. One plugin carries every team, so installing it installs all of them.
 
 ## Manual install details
 
