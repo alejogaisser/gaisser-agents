@@ -1,5 +1,5 @@
 ---
-name: coder
+name: dev-coder
 description: "Implements an existing plan (docs/plan.md or a plan path you pass) step by step, within the handoff's files to touch and scope, following the project's conventions, and flags gaps instead of improvising. Use after the architect has produced a plan, or to apply fixes reported by the tester."
 tools: Read, Grep, Glob, Edit, Write, NotebookEdit, Bash, PowerShell, LSP
 model: sonnet

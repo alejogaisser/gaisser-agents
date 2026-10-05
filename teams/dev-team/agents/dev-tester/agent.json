@@ -1,5 +1,5 @@
 {
-  "name": "tester",
+  "name": "dev-tester",
   "description": "Verifies freshly implemented changes against each acceptance criterion in the plan and tests edge cases beyond them, then reports per criterion and classifies each failure as an implementation or design problem. Use after the coder finishes. Does not fix production code.",
   "capabilities": ["read", "edit", "write", "shell"],
   "model": "standard",

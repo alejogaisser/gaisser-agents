@@ -1,7 +1,6 @@
 ---
 name: dev-team
 description: "Calls the dev team: orchestrates the architect, coder, and tester subagents to plan, implement, and verify a code change, with a structured handoff and testable acceptance criteria, a review gate, optional checkpoints, failure routing with at most 2 fix cycles, project decision records and lessons learned, and a five-section final report. Use when the user calls the dev team or asks, in any language, for the full flow, for checkpoints or step-by-step work, for a single role such as \"architect only\" or \"just the tester\", or for a non-trivial feature, refactor, or multi-file bug fix."
-argument-hint: "[task] [with checkpoints]"
 license: Apache-2.0
 ---
 
@@ -15,9 +14,9 @@ The task is the request that invoked this skill. If it came without a task, use 
 
 | Role | Subagent |
 |------|----------|
-| Plan, revise the plan, and record decisions and lessons | `dev-team:architect` |
-| Implement | `dev-team:coder` |
-| Verify | `dev-team:tester` |
+| Plan, revise the plan, and record decisions and lessons | `dev_architect` |
+| Implement | `dev_coder` |
+| Verify | `dev_tester` |
 
 If a subagent in this table is not available under that name, look for the same name without a plugin prefix, because manual installs have none. If no subagents are available at all, use the single-session fallback at the end of this file.
 

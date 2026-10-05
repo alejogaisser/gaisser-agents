@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "dev-team",
+      "name": "gaisser-agents",
       "source": {
         "source": "local",
-        "path": "./dist/codex-plugin/dev-team"
+        "path": "./dist/codex-plugin/gaisser-agents"
       },
       "policy": {
         "installation": "AVAILABLE",

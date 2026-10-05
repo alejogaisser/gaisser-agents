@@ -18,16 +18,17 @@ Destinations (relative to -Base):
 Exit codes: 0 success, 1 a file operation failed, 2 usage error.
 
 .PARAMETER List
-List the available teams (plugins) for the selected target(s) and exit.
+List the available plugins for the selected target(s) and exit.
 
 .PARAMETER Target
 claude (default), codex, or all.
 
 .PARAMETER Plugin
-Team (plugin) to install. Accepts several values, or a comma-separated list.
+Plugin to install. Accepts several values, or a comma-separated list. The catalog ships
+one plugin, gaisser-agents, for every target.
 
 .PARAMETER All
-Install every team.
+Install every plugin (the whole catalog).
 
 .PARAMETER Base
 Home-like root to install into. Default: your home folder. Relative paths resolve
@@ -46,7 +47,7 @@ Show what would happen without creating or changing anything.
 Show this help.
 
 .EXAMPLE
-.\install.ps1 -Target codex -Plugin dev-team
+.\install.ps1 -Target codex -Plugin gaisser-agents
 
 .EXAMPLE
 .\install.ps1 -Target all -All -Base C:\work\my-project -DryRun
@@ -298,7 +299,7 @@ foreach ($t in $Targets) {
 if ((-not $DryRun) -and (-not $script:Failed)) {
     Write-Output ''
     Write-Output 'Restart the tool (or start a new session) to load new agents and skills.'
-    Write-Output "Claude manual installs are not namespaced: use 'architect', not 'dev-team:architect', and call a team with its skill, for example /dev-team."
+    Write-Output "Claude manual installs are not namespaced: use 'dev-architect', not 'gaisser-agents:dev-architect', and call a team with its skill, for example /dev-team."
     Write-Output 'In Codex, call a team with its skill, for example $dev-team.'
     Write-Output 'To update later: git pull, then re-run this script with -Force.'
 }

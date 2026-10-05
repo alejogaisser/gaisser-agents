@@ -13,10 +13,10 @@ Copies the catalog's agents and skills into a Claude Code and/or Codex setup.
 Existing files are never overwritten silently.
 
 Options:
-  -l, --list             List the available teams (plugins) for the selected target(s) and exit
+  -l, --list             List the available plugins for the selected target(s) and exit
   -t, --target T         claude (default), codex, or all
-  -p, --plugin NAME      Team (plugin) to install (repeatable, or comma-separated)
-  -a, --all              Install every team
+  -p, --plugin NAME      Plugin to install (repeatable, or comma-separated); the catalog ships one, gaisser-agents, for every target
+  -a, --all              Install every plugin (the whole catalog)
   -b, --base DIR         Home-like root to install into (default: your home folder)
   -A, --agents-only      Codex only: install the agents but not the skill
                          (use this when you installed the Codex plugin)
@@ -300,7 +300,7 @@ done
 if [ "$DRY" -eq 0 ] && [ "$FAILED" -eq 0 ]; then
   echo
   echo "Restart the tool (or start a new session) to load new agents and skills."
-  echo "Claude manual installs are not namespaced: use 'architect', not 'dev-team:architect', and call a team with its skill, for example /dev-team."
+  echo "Claude manual installs are not namespaced: use 'dev-architect', not 'gaisser-agents:dev-architect', and call a team with its skill, for example /dev-team."
   echo "In Codex, call a team with its skill, for example \$dev-team."
   echo "To update later: git pull, then re-run this script with --force."
 fi

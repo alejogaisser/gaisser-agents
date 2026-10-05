@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "gaisser-agents",
+  "version": "3.0.0",
+  "description": "Agent teams you call by domain, starting with the dev team: architect, coder, and tester subagents plus one entry skill per team that runs them.",
+  "author": {
+    "name": "Alejo Gaisser",
+    "url": "https://github.com/alejogaisser"
+  },
+  "homepage": "https://github.com/alejogaisser/gaisser-agents#gaisser-agents",
+  "repository": "https://github.com/alejogaisser/gaisser-agents",
+  "license": "Apache-2.0",
+  "keywords": [
+    "agents",
+    "teams",
+    "orchestration",
+    "planning",
+    "testing"
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "name": "dev-team",
   "displayName": "Dev Team",
-  "version": "2.0.0",
+  "agentPrefix": "dev-",
   "description": "The dev team: architect, coder, and tester subagents plus the dev-team skill that runs them as a plan, implement, and verify workflow with a review gate and a final report.",
   "category": "development",
   "keywords": ["team", "planning", "implementation", "testing", "orchestration"],

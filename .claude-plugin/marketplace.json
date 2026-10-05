@@ -1,26 +1,27 @@
 {
   "name": "gaisser-agents",
-  "description": "Agent teams you call by domain. Each team is a plugin with its subagents and one entry skill that runs them, starting with the dev team: architect, coder, and tester.",
+  "description": "Agent teams you call by domain. Every team ships in one plugin, each with its own subagents and one entry skill that runs them, starting with the dev team: architect, coder, and tester.",
   "owner": {
     "name": "Alejo Gaisser",
     "url": "https://github.com/alejogaisser"
   },
   "plugins": [
     {
-      "name": "dev-team",
-      "source": "./dist/claude-code/dev-team",
-      "description": "The dev team: architect, coder, and tester subagents plus the dev-team skill that runs them as a plan, implement, and verify workflow with a review gate and a final report.",
+      "name": "gaisser-agents",
+      "source": "./dist/claude-code/gaisser-agents",
+      "description": "Agent teams you call by domain, starting with the dev team: architect, coder, and tester subagents plus one entry skill per team that runs them.",
       "category": "development",
       "tags": [
-        "team",
+        "agents",
+        "teams",
+        "orchestration",
         "planning",
-        "implementation",
-        "testing",
-        "orchestration"
+        "testing"
       ]
     }
   ],
   "renames": {
-    "dev-pipeline": "dev-team"
+    "dev-pipeline": "dev-team",
+    "dev-team": "gaisser-agents"
   }
 }

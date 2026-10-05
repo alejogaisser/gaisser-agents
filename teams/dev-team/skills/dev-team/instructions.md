@@ -8,9 +8,9 @@ The task is the request that invoked this skill. If it came without a task, use 
 
 | Role | Subagent |
 |------|----------|
-| Plan, revise the plan, and record decisions and lessons | {{agent:architect}} |
-| Implement | {{agent:coder}} |
-| Verify | {{agent:tester}} |
+| Plan, revise the plan, and record decisions and lessons | {{agent:dev-architect}} |
+| Implement | {{agent:dev-coder}} |
+| Verify | {{agent:dev-tester}} |
 
 If a subagent in this table is not available under that name, look for the same name without a plugin prefix, because manual installs have none. If no subagents are available at all, use the single-session fallback at the end of this file.
 

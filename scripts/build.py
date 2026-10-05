@@ -3,13 +3,13 @@
 
 Sources: catalog.json plus teams/<team>/{team.json,
 agents/<name>/{agent.json,prompt.md}, skills/<name>/{skill.json,instructions.md}}.
-One team folder is one plugin.
+Every team folder feeds one plugin per tool (catalog.json "plugin").
 
 Generated (committed, never edited by hand):
   .claude-plugin/marketplace.json            Claude Code marketplace
-  dist/claude-code/<team>/...                Claude Code plugin
-  dist/codex/<team>/...                      Codex custom agents (TOML) + skill
-  dist/codex-plugin/<team>/...               Codex plugin (skills only)
+  dist/claude-code/<plugin>/...              Claude Code plugin (every team)
+  dist/codex/<plugin>/...                    Codex custom agents (TOML) + skills (every team)
+  dist/codex-plugin/<plugin>/...             Codex plugin (skills only, every team)
   .agents/plugins/marketplace.json           Codex marketplace
 
 Usage: py -3 scripts/build.py [--root PATH] [--check] [--base-ref REF]
@@ -81,12 +81,13 @@ LEGACY_SOURCE_DIRS = ["agents", "skills"]
 TEAM_NAME_RE = r"^[a-z0-9]+(-[a-z0-9]+)*-team$"
 AGENT_PREFIX_RE = r"^[a-z0-9]+(-[a-z0-9]+)*-$"
 TARGETS = ["claude-code", "codex"]  # canonical order; equal to the dist/ folder names
-CATALOG_KEYS = {"marketplace", "teams", "renames"}
-CATALOG_REQUIRED = {"marketplace", "teams"}
+CATALOG_KEYS = {"marketplace", "plugin", "teams", "renames"}
+CATALOG_REQUIRED = {"marketplace", "plugin", "teams"}
 MARKETPLACE_KEYS = {"name", "description", "owner", "repository", "license"}
-TEAM_KEYS = {"name", "displayName", "version", "description", "category",
+PLUGIN_KEYS = {"name", "displayName", "version", "description", "category", "keywords"}
+TEAM_KEYS = {"name", "displayName", "description", "category",
              "keywords", "color", "targets", "agentPrefix"}
-TEAM_REQUIRED = TEAM_KEYS - {"agentPrefix"}
+TEAM_REQUIRED = TEAM_KEYS
 AGENT_FILES = {"agent.json", "prompt.md"}
 SKILL_FILES = {"skill.json", "instructions.md"}
 AGENT_KEYS = {"name", "description", "capabilities", "model", "effort"}
@@ -248,6 +249,8 @@ def _validate_catalog(catalog, findings):
     if not (isinstance(mp.get("license"), str) and mp["license"].strip()):
         err(findings, path, "marketplace license must be non-empty")
 
+    plugin_name = _validate_plugin(catalog["plugin"], findings)
+
     teams = catalog["teams"]
     if not (isinstance(teams, list) and teams and all(valid_name(t) for t in teams)):
         err(findings, path, "'teams' must be a non-empty list of team names")
@@ -258,11 +261,41 @@ def _validate_catalog(catalog, findings):
             err(findings, path, "duplicate team '%s'" % team)
         seen.add(team)
     if "renames" in catalog:
-        _validate_renames(catalog["renames"], teams, findings)
+        _validate_renames(catalog["renames"], {plugin_name} if plugin_name else set(), findings)
     return not any(f.level == "ERROR" and f.path == path for f in findings)
 
 
-def _validate_renames(renames, teams, findings):
+def _validate_plugin(plugin, findings):
+    """Validate the catalog.json plugin block. Returns the plugin name (or None)."""
+    path = "catalog.json"
+    if not isinstance(plugin, dict):
+        err(findings, path, "'plugin' must be an object")
+        return None
+    check_keys(findings, path, plugin, PLUGIN_KEYS)
+    name = plugin.get("name")
+    if not valid_name(name):
+        err(findings, path, "plugin name must be kebab-case, at most 64 chars")
+        name = None
+    elif "claude" in name or "anthropic" in name:
+        err(findings, path, "plugin name must not contain 'claude' or 'anthropic'")
+    elif name.startswith("cc-plugin-"):
+        err(findings, path, "plugin name must not start with 'cc-plugin-'")
+    if not single_line(plugin.get("displayName")):
+        err(findings, path, "plugin displayName must be a non-empty single line")
+    if not single_line(plugin.get("description")):
+        err(findings, path, "plugin description must be a non-empty single line")
+    if not (isinstance(plugin.get("version"), str) and re.match(SEMVER_RE, plugin["version"])):
+        err(findings, path, "plugin version must be semver (MAJOR.MINOR.PATCH)")
+    if not (isinstance(plugin.get("category"), str) and re.match(NAME_RE, plugin["category"])):
+        err(findings, path, "plugin category must be kebab-case")
+    kws = plugin.get("keywords")
+    if not (isinstance(kws, list) and kws and all(
+            isinstance(k, str) and re.match(NAME_RE, k) for k in kws)):
+        err(findings, path, "plugin keywords must be a non-empty list of kebab-case strings")
+    return name
+
+
+def _validate_renames(renames, plugin_names, findings):
     path = "catalog.json"
     if not isinstance(renames, dict):
         err(findings, path, "'renames' must be an object")
@@ -270,17 +303,17 @@ def _validate_renames(renames, teams, findings):
     for old in renames:
         if not valid_name(old):
             err(findings, path, "renames: '%s' is not a valid plugin name" % old)
-        elif old in teams:
-            err(findings, path, "renames: '%s' is a current team" % old)
+        elif old in plugin_names:
+            err(findings, path, "renames: '%s' is a current plugin" % old)
     for old, new in renames.items():
-        if not valid_name(old) or old in teams:
+        if not valid_name(old) or old in plugin_names:
             continue
         if new is not None and not valid_name(new):
             err(findings, path, "renames: target of '%s' must be a plugin name or null" % old)
             continue
         seen = {old}
         cur = new
-        while cur is not None and cur not in teams:
+        while cur is not None and cur not in plugin_names:
             if cur not in renames:
                 err(findings, path, "renames: '%s' chain does not resolve" % old)
                 break
@@ -311,8 +344,6 @@ def _validate_team(meta, team, findings):
         err(findings, path, "%s: name must not contain 'claude' or 'anthropic'" % where)
     if isinstance(name, str) and name.startswith("cc-plugin-"):
         err(findings, path, "%s: name must not start with 'cc-plugin-'" % where)
-    if not (isinstance(meta.get("version"), str) and re.match(SEMVER_RE, meta["version"])):
-        err(findings, path, "%s: version must be semver (MAJOR.MINOR.PATCH)" % where)
     if not single_line(meta.get("description")):
         err(findings, path, "%s: description must be a non-empty single line" % where)
     if not single_line(meta.get("displayName")):
@@ -548,6 +579,8 @@ def load_sources(root):
 
     loaded_teams, loaded_agents, loaded_skills = {}, {}, {}
     owners = {"agent": {}, "skill": {}}
+    prefix_owners = {}
+    team_targets = set()
     for team in teams:
         if not (tdir / team).is_dir():
             err(findings, "catalog.json", "team '%s' has no folder under teams/" % team)
@@ -557,6 +590,10 @@ def load_sources(root):
         if tmeta is None:
             continue
         prefix = _validate_team(tmeta, team, findings)
+        if prefix:
+            prefix_owners.setdefault(prefix, []).append(team)
+        if isinstance(tmeta, dict) and isinstance(tmeta.get("targets"), list):
+            team_targets.update(t for t in tmeta["targets"] if isinstance(t, str))
         agents, skills = {}, {}
         for name in agent_names:
             data = _load_agent(root, team, name, prefix, findings)
@@ -607,6 +644,14 @@ def load_sources(root):
                 err(findings, "catalog.json", "%s '%s' is defined by more than one team (%s)"
                     % (kind, n, ", ".join(ts)))
 
+    for prefix, ts in sorted(prefix_owners.items()):
+        if len(ts) > 1:
+            err(findings, "catalog.json", "agentPrefix '%s' is used by more than one team (%s)"
+                % (prefix, ", ".join(ts)))
+    for tool in TARGETS:
+        if tool not in team_targets:
+            warn(findings, "catalog.json", "no team targets '%s'; that tool gets no plugin" % tool)
+
     catalog["_teams"] = loaded_teams
     catalog["_agents"] = loaded_agents
     catalog["_skills"] = loaded_skills
@@ -620,7 +665,7 @@ def check_docs(root, catalog):
     readme = read_text(root, "README.md", findings)
     if readme is not None and catalog is not None:
         mp = catalog["marketplace"]
-        names = []
+        names = [catalog["plugin"]["name"]]
         for team in catalog["teams"]:
             names.append(team)
             names.extend(catalog.get("_teams", {}).get(team, {}).get("agents", []))
@@ -676,34 +721,59 @@ def render_outputs(catalog):
     repo, lic = mp["repository"], mp["license"]
     owner = dict(mp["owner"])
     claude_entries, codex_entries = [], []
+    plugin = catalog["plugin"]
+    pname = plugin["name"]
+    cbase = "dist/claude-code/%s" % pname
+    xbase = "dist/codex/%s" % pname
+    pbase = "dist/codex-plugin/%s" % pname
+    any_claude = any("claude-code" in catalog["_teams"][t]["meta"]["targets"]
+                     for t in catalog["teams"])
+    any_codex = any("codex" in catalog["_teams"][t]["meta"]["targets"]
+                    for t in catalog["teams"])
+
+    if any_claude:
+        claude_entries.append({
+            "name": pname,
+            "source": "./" + cbase,
+            "description": plugin["description"],
+            "category": plugin["category"],
+            "tags": plugin["keywords"],
+        })
+        out[cbase + "/.claude-plugin/plugin.json"] = dump_json({
+            "name": pname,
+            "displayName": plugin["displayName"],
+            "version": plugin["version"],
+            "description": plugin["description"],
+            "author": owner,
+            "homepage": repo + "#" + pname,
+            "repository": repo,
+            "license": lic,
+            "keywords": plugin["keywords"],
+        })
+    if any_codex:
+        # Codex plugin: Agent Plugins schema, skills only (custom agents cannot ride in a plugin).
+        out[pbase + "/plugin.json"] = dump_json({
+            "$schema": CODEX_PLUGIN_SCHEMA,
+            "name": pname,
+            "version": plugin["version"],
+            "description": plugin["description"],
+            "author": owner,
+            "homepage": repo + "#" + pname,
+            "repository": repo,
+            "license": lic,
+            "keywords": plugin["keywords"],
+        })
+        codex_entries.append({
+            "name": pname,
+            "source": {"source": "local", "path": "./" + pbase},
+            "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+            "category": plugin["category"].replace("-", " ").title(),
+        })
 
     for team in catalog["teams"]:
         tinfo = catalog["_teams"][team]
         tmeta = tinfo["meta"]
         targets = tmeta["targets"]
-        cbase = "dist/claude-code/%s" % team
-        xbase = "dist/codex/%s" % team
-        pbase = "dist/codex-plugin/%s" % team
-
-        if "claude-code" in targets:
-            claude_entries.append({
-                "name": team,
-                "source": "./" + cbase,
-                "description": tmeta["description"],
-                "category": tmeta["category"],
-                "tags": tmeta["keywords"],
-            })
-            out[cbase + "/.claude-plugin/plugin.json"] = dump_json({
-                "name": team,
-                "displayName": tmeta["displayName"],
-                "version": tmeta["version"],
-                "description": tmeta["description"],
-                "author": owner,
-                "homepage": repo + "#" + team,
-                "repository": repo,
-                "license": lic,
-                "keywords": tmeta["keywords"],
-            })
 
         for aname in tinfo["agents"]:
             meta = catalog["_agents"][aname]["meta"]
@@ -759,39 +829,19 @@ def render_outputs(catalog):
                 fm.append("license: " + lic)
                 fm.append("---")
                 out[cbase + "/skills/%s/SKILL.md" % sname] = (
-                    "\n".join(fm) + "\n\n" + _render_skill_body(text, team, "claude"))
+                    "\n".join(fm) + "\n\n" + _render_skill_body(text, pname, "claude"))
                 for frel, ftext in sfiles.items():
                     out[cbase + "/skills/%s/%s" % (sname, frel)] = ftext
 
             if "codex" in targets:
                 codex_skill = "\n".join(
                     ["---", "name: " + sname, "description: " + dq(meta["description"]),
-                     "license: " + lic, "---"]) + "\n\n" + _render_skill_body(text, team, "codex")
+                     "license: " + lic, "---"]) + "\n\n" + _render_skill_body(text, pname, "codex")
                 out[xbase + "/skills/%s/SKILL.md" % sname] = codex_skill
                 out[pbase + "/skills/%s/SKILL.md" % sname] = codex_skill
                 for frel, ftext in sfiles.items():
                     out[xbase + "/skills/%s/%s" % (sname, frel)] = ftext
                     out[pbase + "/skills/%s/%s" % (sname, frel)] = ftext
-
-        if "codex" in targets:
-            # Codex plugin: Agent Plugins schema, skills only (custom agents cannot ride in a plugin).
-            out[pbase + "/plugin.json"] = dump_json({
-                "$schema": CODEX_PLUGIN_SCHEMA,
-                "name": team,
-                "version": tmeta["version"],
-                "description": tmeta["description"],
-                "author": owner,
-                "homepage": repo + "#" + team,
-                "repository": repo,
-                "license": lic,
-                "keywords": tmeta["keywords"],
-            })
-            codex_entries.append({
-                "name": team,
-                "source": {"source": "local", "path": "./" + pbase},
-                "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
-                "category": tmeta["category"].replace("-", " ").title(),
-            })
 
     claude_mp = {
         "name": mp["name"],
@@ -916,34 +966,32 @@ def check_version_bumps(root, base_ref):
     diff = _git(root, "diff", "--name-only", base_ref + "...HEAD", "--", "dist/")
     if diff.returncode != 0:
         raise BuildFailure("git diff failed: %s" % diff.stderr.strip())
-    changed = set()
-    for line in diff.stdout.splitlines():
-        parts = line.strip().split("/")
-        if len(parts) >= 4 and parts[0] == "dist":
-            changed.add(parts[2])
-    for name in sorted(changed):
-        tpath = "%s/%s/team.json" % (TEAMS_DIR, name)
-        old_raw = _git(root, "show", "%s:%s" % (base_ref, tpath))
-        if old_raw.returncode != 0:
-            continue  # new, renamed, or removed team: nothing to compare
-        new_file = root / tpath
-        if not new_file.is_file():
-            continue
-        try:
-            old_v = json.loads(old_raw.stdout)["version"]
-            new_v = json.loads(new_file.read_text(encoding="utf-8"))["version"]
-        except (ValueError, KeyError, TypeError, OSError):
-            raise BuildFailure("cannot read the version from %s" % tpath)
-        try:
-            old_t, new_t = semver_tuple(old_v), semver_tuple(new_v)
-        except (ValueError, AttributeError):
-            continue
-        if new_t == old_t:
-            err(findings, tpath,
-                "%s changed but its version was not bumped (%s)" % (name, new_v))
-        elif new_t < old_t:
-            err(findings, tpath,
-                "%s version went down (%s -> %s)" % (name, old_v, new_v))
+    if not diff.stdout.strip():
+        return findings
+    old_raw = _git(root, "show", "%s:catalog.json" % base_ref)
+    if old_raw.returncode != 0:
+        return findings  # no catalog.json at the base: nothing to compare
+    try:
+        old_plugin = json.loads(old_raw.stdout).get("plugin")
+    except (ValueError, AttributeError):
+        raise BuildFailure("cannot read catalog.json at %s" % base_ref)
+    if not isinstance(old_plugin, dict):
+        return findings  # base predates the single plugin: skip
+    try:
+        old_v = old_plugin["version"]
+        new_v = json.loads((root / "catalog.json").read_text(encoding="utf-8"))["plugin"]["version"]
+    except (ValueError, KeyError, TypeError, OSError):
+        raise BuildFailure("cannot read plugin.version from catalog.json")
+    try:
+        old_t, new_t = semver_tuple(old_v), semver_tuple(new_v)
+    except (ValueError, AttributeError):
+        return findings
+    if new_t == old_t:
+        err(findings, "catalog.json",
+            "dist/ changed but plugin.version was not bumped (%s)" % new_v)
+    elif new_t < old_t:
+        err(findings, "catalog.json",
+            "plugin.version went down (%s -> %s)" % (old_v, new_v))
     return findings
 
 
@@ -971,7 +1019,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Validate sources and generate per-tool outputs.")
     parser.add_argument("--root", default=None, help="repository root (default: parent of scripts/)")
     parser.add_argument("--check", action="store_true", help="compare generated output with disk; never write")
-    parser.add_argument("--base-ref", default=None, help="also check team version bumps against REF")
+    parser.add_argument("--base-ref", default=None, help="also check plugin.version bump against REF")
     args = parser.parse_args(argv)
 
     root = Path(args.root) if args.root else Path(__file__).resolve().parent.parent
