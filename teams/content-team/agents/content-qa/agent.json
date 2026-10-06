@@ -1,0 +1,7 @@
+{
+  "name": "content-qa",
+  "description": "Checks rendered content against the copy, the visual system, the evidence, and the policies, recording one verdict per check with page or frame evidence. Use after rendering and again after every fix. Does not fix content.",
+  "capabilities": ["read", "write", "shell"],
+  "model": "standard",
+  "effort": "high"
+}

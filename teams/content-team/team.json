@@ -1,0 +1,10 @@
+{
+  "name": "content-team",
+  "displayName": "Content Team",
+  "agentPrefix": "content-",
+  "description": "The content team: brand, scout, writer, designer, and QA subagents plus the content-team skill that runs them from one content request to reviewed drafts, with every brand fact kept in the consuming project and no outward action without approval.",
+  "category": "content-creation",
+  "keywords": ["team", "content", "social", "copywriting", "design"],
+  "color": "purple",
+  "targets": ["claude-code", "codex"]
+}

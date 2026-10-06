@@ -1,0 +1,7 @@
+{
+  "name": "content-writer",
+  "description": "Writes every string of a content piece in the project's voice from the scout's angle: post text, caption, carousel copy, video script, and alt text. Use after the scout has produced its evidence and before any design work starts.",
+  "capabilities": ["read", "write"],
+  "model": "deep",
+  "effort": "high"
+}

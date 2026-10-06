@@ -1,0 +1,7 @@
+{
+  "name": "content-brand",
+  "description": "Builds or refreshes the brand profile and the visual system for a content project from sources the user supplies, marking every unsourced value for confirmation. Use when the context files are missing, stale, or being migrated from an existing style.",
+  "capabilities": ["read", "write", "web"],
+  "model": "deep",
+  "effort": "high"
+}

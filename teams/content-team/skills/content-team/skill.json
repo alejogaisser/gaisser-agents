@@ -1,0 +1,6 @@
+{
+  "name": "content-team",
+  "description": "Calls the content team: orchestrates the brand, scout, writer, designer, and QA subagents to take one content request to reviewed drafts (angle, copy, rendered assets, and a QA pass), with every brand fact read from the project's context files, per-format render paths, drafts only by default, and human approval before any outward action. Use when the user calls the content team or asks, in any language, for a post, carousel, short video, caption, or thread, for a brand or visual-system setup, or for a single role such as \"scout only\" or \"just QA\".",
+  "argumentHint": "[content request] [with checkpoints]",
+  "agents": ["content-brand", "content-scout", "content-writer", "content-designer", "content-qa"]
+}
