@@ -1,8 +1,8 @@
 {
   "name": "gaisser-agents",
   "displayName": "Gaisser Agents",
-  "version": "3.0.0",
-  "description": "Agent teams you call by domain, starting with the dev team: architect, coder, and tester subagents plus one entry skill per team that runs them.",
+  "version": "3.1.0",
+  "description": "Agent teams you call by domain, a dev team and a content team, each with its own subagents plus one entry skill that runs them.",
   "author": {
     "name": "Alejo Gaisser",
     "url": "https://github.com/alejogaisser"

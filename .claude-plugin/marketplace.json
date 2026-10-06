@@ -1,6 +1,6 @@
 {
   "name": "gaisser-agents",
-  "description": "Agent teams you call by domain. Every team ships in one plugin, each with its own subagents and one entry skill that runs them, starting with the dev team: architect, coder, and tester.",
+  "description": "Agent teams you call by domain. Every team ships in one plugin, each with its own subagents and one entry skill that runs them. Two teams ship today: a dev team (architect, coder, tester) and a content team (scout, writer, designer, brand, QA).",
   "owner": {
     "name": "Alejo Gaisser",
     "url": "https://github.com/alejogaisser"
@@ -9,7 +9,7 @@
     {
       "name": "gaisser-agents",
       "source": "./dist/claude-code/gaisser-agents",
-      "description": "Agent teams you call by domain, starting with the dev team: architect, coder, and tester subagents plus one entry skill per team that runs them.",
+      "description": "Agent teams you call by domain, a dev team and a content team, each with its own subagents plus one entry skill that runs them.",
       "category": "development",
       "tags": [
         "agents",

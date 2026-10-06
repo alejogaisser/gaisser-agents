@@ -24,6 +24,10 @@ CLAUDE.local.md
 # Working artifacts of the dev pipeline
 docs/plan-*.md
 
+# Filled content context and run output: personal data, lives in the consuming project
+team-context/
+content-runs/
+
 # Fonts: never commit; teams load fonts from the user's project
 *.ttf
 *.otf

@@ -92,9 +92,10 @@ Add an entry to `renames` in `catalog.json`: the old plugin name maps to the cur
 - Project context files convention: teams never ship personal or brand data (voice, people, palettes, fonts, photos). The entry skill declares them in a `## Project context` section (file, default path, template, required). The default path is `team-context/<team>/<file>.md`, overridable in the project's CLAUDE.md or AGENTS.md. If a required file is missing, the skill copies its template from `assets/`, asks the user to fill it in, and stops; the resolved paths are passed to every subagent. Binary inputs such as fonts stay in the user's project and `.gitignore` excludes font files.
 - The dev-team skill holds the canonical handoff template; the architect prompt repeats its six field names in order, and a test keeps them in sync.
 
-## 10. Planned teams
+## 10. Built and planned teams
 
-- `content-team`: Instagram carousels, Claude Code only (Canva MCP plus Claude in Chrome).
+- `dev-team`: built. Architect, coder, and tester for code changes, on both targets.
+- `content-team`: built. Five roles (scout, writer, designer, brand, QA) for social content, on both targets. Local coded rendering is the default path; remote design tools are optional.
 - `finance-team`: to be designed with the owner first.
 
 ## 11. Test locally

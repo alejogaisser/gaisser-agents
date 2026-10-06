@@ -1,0 +1,7 @@
+{
+  "name": "content-designer",
+  "description": "Turns approved copy into a render-path-agnostic composition spec and renders the local path (stills and video) from code, following the project's visual system. Use after the copy is drafted, or to apply layout fixes reported by QA.",
+  "capabilities": ["read", "edit", "write", "shell"],
+  "model": "standard",
+  "effort": "high"
+}
