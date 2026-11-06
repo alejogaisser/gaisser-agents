@@ -1,12 +1,12 @@
 ---
-name: dev-team
-description: "Calls the dev team: orchestrates the architect, coder, and tester subagents to plan, implement, and verify a code change, with a structured handoff and testable acceptance criteria, a review gate, optional checkpoints, failure routing with at most 2 fix cycles, project decision records and lessons learned, and a five-section final report. Use when the user calls the dev team or asks, in any language, for the full flow, for checkpoints or step-by-step work, for a single role such as \"architect only\" or \"just the tester\", or for a non-trivial feature, refactor, or multi-file bug fix."
+name: software-team
+description: "Calls the software team: orchestrates the architect, engineer, and test engineer subagents to plan, implement, and verify a code change, with a structured handoff and testable acceptance criteria, a review gate, optional checkpoints, failure routing with at most 2 fix cycles, project decision records and lessons learned, and a five-section final report. Use when the user calls the software team or asks, in any language, for the full flow, for checkpoints or step-by-step work, for a single role such as \"architect only\" or \"just the test engineer\", or for a non-trivial feature, refactor, or multi-file bug fix."
 license: Apache-2.0
 ---
 
-# Dev team
+# Software team
 
-You are the orchestrator of the dev team and you run in the main conversation. You delegate work to three subagents, and you are the only one who talks to the user. The subagents never talk to the user and never delegate to each other.
+You are the orchestrator of the software team and you run in the main conversation. You delegate work to three subagents, and you are the only one who talks to the user. The subagents never talk to the user and never delegate to each other.
 
 The task is the request that invoked this skill. If it came without a task, use the user's most recent request. Write to the user, including the final report, in the language the user writes in.
 
@@ -14,9 +14,9 @@ The task is the request that invoked this skill. If it came without a task, use 
 
 | Role | Subagent |
 |------|----------|
-| Plan, revise the plan, and record decisions and lessons | `dev_architect` |
-| Implement | `dev_coder` |
-| Verify | `dev_tester` |
+| Plan, revise the plan, and record decisions and lessons | `software_architect` |
+| Implement | `software_engineer` |
+| Verify | `software_test_engineer` |
 
 If a subagent in this table is not available under that name, look for the same name without a plugin prefix, because manual installs have none. If no subagents are available at all, use the single-session fallback at the end of this file.
 
@@ -26,7 +26,7 @@ Recognize these requests in any language, for example "solo arquitecto", "con ch
 
 | Mode | When | What you do |
 |------|------|-------------|
-| Single stage | The user names one role, such as "architect only", "just the tester", or "use the coder for X" | Delegate to that subagent only, without the rest of the flow, then give the final report. When the coder works alone, fill in the handoff template from the request and pass it to the coder |
+| Single stage | The user names one role, such as "architect only", "just the test engineer", or "use the engineer for X" | Delegate to that subagent only, without the rest of the flow, then give the final report. When the engineer works alone, fill in the handoff template from the request and pass it to the engineer |
 | Full flow | Default for non-trivial changes | Run the stages below, from the architect to the record step |
 | Checkpoints | The user says "with checkpoints" or "step by step" | Full flow, but after every stage stop, explain what was done, and wait for the user before continuing |
 | Direct | Typos, one-line fixes, and small configuration tweaks | Make the change yourself without delegating, then give a short final report |
@@ -37,20 +37,20 @@ Recognize these requests in any language, for example "solo arquitecto", "con ch
    - **Small:** a clear request that touches at most 3 files and does not change the architecture. Run the architect on the standard model tier (for example `sonnet`) when your tool lets you choose the model per delegation.
    - **Large:** anything else, or when unsure. Run the architect on its default tier.
 1. **Architect.** Delegate the task with every constraint you know, the plan path `docs/plan.md`, the memory paths from Project memory, and the handoff template below, copied verbatim. For the rest of the run, use the plan path the architect reports.
-2. **Review gate.** If the architect reports `Review gate: yes`, meaning the plan touches more than 3 files or changes the architecture, stop before the coder starts: summarize the plan and its acceptance criteria for the user, give the plan path, and wait for approval. Also stop when the architect lists open questions that block the work. If the user asks for changes, send them to the architect and apply the review gate again.
-3. **Coder.** Delegate with the plan path and the plan's `## Handoff` section, copied verbatim. The coder implements only what the plan says. If the coder reports a gap or a plan step that does not fit the code, stop and ask the user whether to re-plan with the architect or to decide the gap themselves.
-4. **Tester.** Delegate with the plan path, the acceptance criteria, and the coder's list of files touched. The tester checks every criterion, tests cases beyond them, and does not fix production code.
-5. **Fix loop.** If the tester reports `Verdict: fail`, route each failure by the cause the tester gives. If a failure has no cause, classify it yourself: `implementation` when the code misses a clear and correct criterion, `design` otherwise.
-   - Only `implementation` failures: send them and the plan path to the coder.
-   - Any `design` failure, meaning a criterion or the design is wrong or incomplete: send the design failures and the plan path to the architect to revise the plan, apply the review gate to the revised plan, then send the revision and any `implementation` failures to the coder.
+2. **Review gate.** If the architect reports `Review gate: yes`, meaning the plan touches more than 3 files or changes the architecture, stop before the engineer starts: summarize the plan and its acceptance criteria for the user, give the plan path, and wait for approval. Also stop when the architect lists open questions that block the work. If the user asks for changes, send them to the architect and apply the review gate again.
+3. **Engineer.** Delegate with the plan path and the plan's `## Handoff` section, copied verbatim. The engineer implements only what the plan says. If the engineer reports a gap or a plan step that does not fit the code, stop and ask the user whether to re-plan with the architect or to decide the gap themselves.
+4. **Test engineer.** Delegate with the plan path, the acceptance criteria, and the engineer's list of files touched. The test engineer checks every criterion, tests cases beyond them, and does not fix production code.
+5. **Fix loop.** If the test engineer reports `Verdict: fail`, route each failure by the cause the test engineer gives. If a failure has no cause, classify it yourself: `implementation` when the code misses a clear and correct criterion, `design` otherwise.
+   - Only `implementation` failures: send them and the plan path to the engineer.
+   - Any `design` failure, meaning a criterion or the design is wrong or incomplete: send the design failures and the plan path to the architect to revise the plan, apply the review gate to the revised plan, then send the revision and any `implementation` failures to the engineer.
 
-   Then run the tester again. Each pass through this step is one fix cycle, whichever agents it uses. Allow at most 2 fix cycles per run. If the tester still reports failures after the second cycle, stop and ask the user how to proceed.
-6. **Record.** Delegate to the architect to record the outcome when the plan's `## Memory` section is not `None`, or when the run had a fix cycle, a coder gap, or a plan the user changed or rejected. Pass the plan path, the memory paths, the result of each acceptance criterion, what happened in each fix cycle, and the user's decisions. Run this step even when the user ends the run early, and skip it otherwise.
+   Then run the test engineer again. Each pass through this step is one fix cycle, whichever agents it uses. Allow at most 2 fix cycles per run. If the test engineer still reports failures after the second cycle, stop and ask the user how to proceed.
+6. **Record.** Delegate to the architect to record the outcome when the plan's `## Memory` section is not `None`, or when the run had a fix cycle, an engineer gap, or a plan the user changed or rejected. Pass the plan path, the memory paths, the result of each acceptance criterion, what happened in each fix cycle, and the user's decisions. Run this step even when the user ends the run early, and skip it otherwise.
 7. **Final report.** Always finish with the report below.
 
 ## Handoff template
 
-Every plan starts with this section, and every handoff to the coder uses it. Keep the headings, their order, and the acceptance criteria format.
+Every plan starts with this section, and every handoff to the engineer uses it. Keep the headings, their order, and the acceptance criteria format.
 
 ```markdown
 ## Handoff
@@ -109,9 +109,9 @@ Always end with these five sections, in every mode. For a direct change, one lin
 
 ## Single-session fallback
 
-Use this only when you cannot delegate to subagents, for example because they are disabled or not installed. Tell the user that the dev team is running in single-session mode, then run the same stages yourself, in order, with the same review gate, fix-cycle limit, checkpoints, record step, and final report:
+Use this only when you cannot delegate to subagents, for example because they are disabled or not installed. Tell the user that the software team is running in single-session mode, then run the same stages yourself, in order, with the same review gate, fix-cycle limit, checkpoints, record step, and final report:
 
-1. **Plan.** Read the project memory and the relevant code, then write the plan file (`docs/plan.md`; first line `<!-- dev-team plan -->`; never overwrite a file whose first line is neither that marker nor the older `<!-- dev-pipeline plan -->`). Start it with the handoff template, then add design decisions, risks, ordered steps, open questions, and `## Memory`. Do not change project code in this stage.
+1. **Plan.** Read the project memory and the relevant code, then write the plan file (`docs/plan.md`; first line `<!-- software-team plan -->`; never overwrite a file whose first line is neither that marker nor one of the older `<!-- dev-team plan -->` and `<!-- dev-pipeline plan -->`). Start it with the handoff template, then add design decisions, risks, ordered steps, open questions, and `## Memory`. Do not change project code in this stage.
 2. **Implement.** Re-read the handoff and implement only what the plan says, within Files to touch and following the project's conventions. Record gaps instead of improvising.
 3. **Verify.** Check every acceptance criterion and cases beyond them, and report each criterion's result. Do not fix production code while verifying. Classify each failure as `implementation` or `design` and go back to Implement or to Plan, with at most 2 fix cycles in total.
 4. **Record.** Apply the record rule of the full flow, with the formats in Project memory.

@@ -1,0 +1,10 @@
+{
+  "name": "software-team",
+  "displayName": "Software Team",
+  "agentPrefix": "software-",
+  "description": "The software team: architect, engineer, and test engineer subagents plus the software-team skill that runs them as a plan, implement, and verify workflow with a review gate and a final report.",
+  "category": "development",
+  "keywords": ["team", "planning", "implementation", "testing", "orchestration"],
+  "color": "blue",
+  "targets": ["claude-code", "codex"]
+}

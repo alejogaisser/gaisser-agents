@@ -8,7 +8,7 @@ Agent teams for Claude Code, Codex, and more. Call a team by domain: each team h
 
 | Team | Call it | Agents | Tools |
 |---|---|---|---|
-| `dev-team` | `/gaisser-agents:dev-team` (Claude Code), `$gaisser-agents:dev-team` (Codex plugin) or `$dev-team` (Codex manual install) | `dev-architect`, `dev-coder`, `dev-tester` | Claude Code, Codex |
+| `software-team` | `/gaisser-agents:software-team` (Claude Code), `$gaisser-agents:software-team` (Codex plugin) or `$software-team` (Codex manual install) | `software-architect`, `software-engineer`, `software-test-engineer` | Claude Code, Codex |
 | `content-team` | `/gaisser-agents:content-team` (Claude Code), `$gaisser-agents:content-team` (Codex plugin) or `$content-team` (Codex manual install) | `content-brand`, `content-scout`, `content-writer`, `content-designer`, `content-qa` | Claude Code, Codex |
 
 The main conversation runs the team's skill and is the only one that talks to you. The subagents never talk to you and never delegate to each other.
@@ -56,7 +56,7 @@ install does not auto-update: rebuild, then re-add or update the marketplace to 
 
 Codex plugins can carry skills but not custom agents, so Codex needs two steps: the plugin for the skills, and the install script for the subagents of every team.
 
-1. Add the marketplace and install the plugin (the `dev-team` and `content-team` skills, and the skill of every team added later):
+1. Add the marketplace and install the plugin (the `software-team` and `content-team` skills, and the skill of every team added later):
 
    ```
    codex plugin marketplace add alejogaisser/gaisser-agents
@@ -76,32 +76,48 @@ Codex plugins can carry skills but not custom agents, so Codex needs two steps: 
 - Where the agents go: `~/.codex/agents/*.toml` (or `$CODEX_HOME/agents`). For a single project, add `--base <project folder>`, which installs into `.codex/agents/`.
 - Use the plugin OR the installer's skill, not both: both provide the team skills under the same names. Without the plugin, drop `--agents-only` and the installer also copies each team's skill to `~/.agents/skills/<team>/`.
 - The single-session fallback works with the plugin alone, without the subagents.
-- Restart Codex, then use `$gaisser-agents:<team> <task>` with the plugin, or `$<team> <task>` with the manual install (for example `dev-team` or `content-team`), or ask Codex to spawn an agent such as `dev_architect` or `content_scout`.
+- Restart Codex, then use `$gaisser-agents:<team> <task>` with the plugin, or `$<team> <task>` with the manual install (for example `software-team` or `content-team`), or ask Codex to spawn an agent such as `software_architect` or `content_scout`.
 - Updating: `git pull`, then re-run the installer with `--force`; update the plugin from Codex.
 
 ## Call a team
 
 ```
-/gaisser-agents:dev-team add rate limiting to the API with checkpoints
-/dev-team add rate limiting to the API with checkpoints
-$gaisser-agents:dev-team add rate limiting to the API with checkpoints
-$dev-team add rate limiting to the API with checkpoints
+/gaisser-agents:software-team add rate limiting to the API with checkpoints
+/software-team add rate limiting to the API with checkpoints
+$gaisser-agents:software-team add rate limiting to the API with checkpoints
+$software-team add rate limiting to the API with checkpoints
 ```
 
-The same forms work for every team: replace `dev-team` with `content-team` and the task with a content brief. The first form is the full plugin-scoped name. The short `/dev-team` works while no other skill claims that name. Codex prefixes a skill that comes from a plugin, so the plugin install is `$gaisser-agents:dev-team` and the manual install, which copies a loose skill file, is `$dev-team`.
+The same forms work for every team: replace `software-team` with `content-team` and the task with a content brief. The first form is the full plugin-scoped name. The short `/software-team` works while no other skill claims that name. Codex prefixes a skill that comes from a plugin, so the plugin install is `$gaisser-agents:software-team` and the manual install, which copies a loose skill file, is `$software-team`.
 
 Router tip for your CLAUDE.md or AGENTS.md:
 
 ```
-For non-trivial code changes, use the dev-team skill (/dev-team in Claude Code, $gaisser-agents:dev-team in Codex).
+For non-trivial code changes, use the software-team skill (/software-team in Claude Code, $gaisser-agents:software-team in Codex).
 For content pieces (carousels, posts, scripts), use the content-team skill (/content-team in Claude Code, $gaisser-agents:content-team in Codex).
-For work on a single role, name the scoped agent, for example gaisser-agents:dev-architect.
+For work on a single role, name the scoped agent, for example gaisser-agents:software-architect.
 Small changes (typos, one-line fixes) are made directly, without delegating.
 ```
 
+## Migrating from gaisser-agents 3.x
+
+In 4.0.0 the dev team became the software team, and its agents were renamed.
+
+| Before | After |
+|---|---|
+| `/gaisser-agents:dev-team`, `/dev-team` | `/gaisser-agents:software-team`, `/software-team` |
+| `$gaisser-agents:dev-team`, `$dev-team` | `$gaisser-agents:software-team`, `$software-team` |
+| `dev-architect` (Codex `dev_architect`) | `software-architect` (Codex `software_architect`) |
+| `dev-coder` (Codex `dev_coder`) | `software-engineer` (Codex `software_engineer`) |
+| `dev-tester` (Codex `dev_tester`) | `software-test-engineer` (Codex `software_test_engineer`) |
+
+- Plugin users (Claude Code and Codex): update the plugin. The plugin name is unchanged, so no renames entry is needed, but skills and agents have no renames map: update anything that calls the old names, such as a router tip in your CLAUDE.md or AGENTS.md.
+- Installer users: run `git pull`, re-run the installer with `-Force` (`--force`), then delete the stale files by hand: `~/.claude/agents/dev-{architect,coder,tester}.md`, `~/.codex/agents/dev-{architect,coder,tester}.toml`, and the `dev-team` skill folder in `~/.claude/skills/` or `~/.agents/skills/`. The installers never delete files.
+- Plans written with the old `<!-- dev-team plan -->` marker are still recognized and overwritten.
+
 ## Migrating from dev-team 2.0.0
 
-`dev-team` 2.0.0 was a plugin of its own. Since 3.0.0 every team ships in the single plugin `gaisser-agents`, and the agents carry the `dev-` prefix.
+`dev-team` 2.0.0 was a plugin of its own. Since 3.0.0 every team ships in the single plugin `gaisser-agents`, and the agents carry a team prefix (`dev-` in 3.x, `software-` since 4.0.0).
 
 - Claude Code marketplace users:
   - The marketplace carries `"renames": {"dev-pipeline": "dev-team", "dev-team": "gaisser-agents"}`.
@@ -115,10 +131,10 @@ Small changes (typos, one-line fixes) are made directly, without delegating.
 
 | Before | After |
 |---|---|
-| `/dev-team` (plugin `dev-team`) | `/gaisser-agents:dev-team` |
-| `$dev-team` (plugin `dev-team`) | `$gaisser-agents:dev-team` |
-| `dev-team:architect` | `gaisser-agents:dev-architect` |
-| Codex agent `architect` | Codex agent `dev_architect` |
+| `/dev-team` (plugin `dev-team`) | `/gaisser-agents:software-team` |
+| `$dev-team` (plugin `dev-team`) | `$gaisser-agents:software-team` |
+| `dev-team:architect` | `gaisser-agents:software-architect` |
+| Codex agent `architect` | Codex agent `software_architect` |
 
 ## Migrating from dev-pipeline
 
@@ -133,36 +149,36 @@ Small changes (typos, one-line fixes) are made directly, without delegating.
 
 | Before | After |
 |---|---|
-| `/dev-pipeline:pipeline` | `/gaisser-agents:dev-team` |
-| `$pipeline` | `$gaisser-agents:dev-team` |
-| `dev-pipeline:<agent>` | `gaisser-agents:dev-<agent>` |
+| `/dev-pipeline:pipeline` | `/gaisser-agents:software-team` |
+| `$pipeline` | `$gaisser-agents:software-team` |
+| `dev-pipeline:<agent>` | `gaisser-agents:software-<role>` (see the 3.x table) |
 
 Existing plans that carry the old marker are still overwritten.
 
 ## Catalog
 
-### dev-team
+### software-team
 
 | Agent | What it does | Claude Code | Codex |
 |---|---|---|---|
-| `dev-architect` | Writes the plan: handoff with acceptance criteria, design, risks, steps; revises it after design failures; keeps decision records and lessons; never edits project code | opus, effort high; Read, Grep, Glob, Edit, Write, Web | effort high, workspace-write |
-| `dev-coder` | Implements the plan within its files and scope; flags gaps | sonnet, effort medium; Read, Grep, Glob, Edit, Write, NotebookEdit, Shell, LSP | effort medium, workspace-write |
-| `dev-tester` | Checks every acceptance criterion and extra cases, reports per criterion, classifies failures as implementation or design; does not fix production code | sonnet, effort medium; Read, Grep, Glob, Edit, Write, Shell | effort medium, workspace-write |
+| `software-architect` | Writes the plan: handoff with acceptance criteria, design, risks, steps; revises it after design failures; keeps decision records and lessons; never edits project code | opus, effort high; Read, Grep, Glob, Edit, Write, Web | effort high, workspace-write |
+| `software-engineer` | Implements the plan within its files and scope; flags gaps | sonnet, effort medium; Read, Grep, Glob, Edit, Write, NotebookEdit, Shell, LSP | effort medium, workspace-write |
+| `software-test-engineer` | Checks every acceptance criterion and extra cases, reports per criterion, classifies failures as implementation or design; does not fix production code | sonnet, effort medium; Read, Grep, Glob, Edit, Write, Shell | effort medium, workspace-write |
 
 `Shell` is Bash plus PowerShell; `Web` is WebFetch plus WebSearch.
 
-Skill: `/gaisser-agents:dev-team` (short form `/dev-team`) in Claude Code, and `$gaisser-agents:dev-team` in Codex with the plugin or `$dev-team` with the manual install. One plugin carries every team, so installing it installs all of them.
+Skill: `/gaisser-agents:software-team` (short form `/software-team`) in Claude Code, and `$gaisser-agents:software-team` in Codex with the plugin or `$software-team` with the manual install. One plugin carries every team, so installing it installs all of them.
 
-How the dev team works:
+How the software team works:
 
-Flow: `dev-architect -> review gate -> coder -> tester -> (at most 2 fix cycles) -> record -> final report`.
+Flow: `software-architect -> review gate -> software-engineer -> software-test-engineer -> (at most 2 fix cycles) -> record -> final report`.
 
 - Four modes, recognized in any language: single stage ("architect only"), full flow (default), checkpoints ("with checkpoints" or "step by step"), and direct (typos and one-line fixes, no delegation).
-- Handoff: every plan starts with a handoff with the fields Goal, Context, Constraints, Files to touch, Out of scope, and Acceptance criteria. The coder receives the same handoff.
-- Acceptance criteria are pass or fail checks written before any code exists. The tester checks each one, tests extra cases, and reports per criterion (`pass`, `fail`, or `not tested`).
-- Failure routing: `implementation` failures go to the coder, and `design` failures go to the architect, who revises the plan in place. There are at most 2 fix cycles in total, then the team asks you.
+- Handoff: every plan starts with a handoff with the fields Goal, Context, Constraints, Files to touch, Out of scope, and Acceptance criteria. The engineer receives the same handoff.
+- Acceptance criteria are pass or fail checks written before any code exists. The test engineer checks each one, tests extra cases, and reports per criterion (`pass`, `fail`, or `not tested`).
+- Failure routing: `implementation` failures go to the engineer, and `design` failures go to the architect, who revises the plan in place. There are at most 2 fix cycles in total, then the team asks you.
 - Project memory: `docs/decisions/` (one short record per decision) and `docs/lessons-learned.md`. The architect reads them before planning and records new entries after a run. Rename them or turn them off in your CLAUDE.md or AGENTS.md; an existing `docs/adr/` folder is reused.
-- Plan markers: the plan file starts with `<!-- dev-team plan -->`; the older `<!-- dev-pipeline plan -->` marker is still recognized. The architect never overwrites a file that lacks both and writes `docs/plan-<task-slug>.md` instead.
+- Plan markers: the plan file starts with `<!-- software-team plan -->`; the older `<!-- dev-team plan -->` and `<!-- dev-pipeline plan -->` markers are still recognized. The architect never overwrites a file that lacks all three and writes `docs/plan-<task-slug>.md` instead.
 - The review gate stops for your approval when the plan touches more than 3 files or changes the architecture, and again when a plan is revised.
 - It always ends with a five-section report: request and status, changes, flow, tests, review.
 - Single-session fallback: if subagents are disabled or not installed, the skill runs the same stages in the main conversation. You lose separate contexts, per-role model and effort, and per-role tool restrictions.
@@ -196,13 +212,13 @@ Skill: `/gaisser-agents:content-team` (short form `/content-team`) in Claude Cod
 | `-n`, `--dry-run` | `-DryRun` | Show what would happen |
 
 - Existing files are skipped unless you pass force. With force, the old copy moves to `agent-catalog-backups/<timestamp>/` under `.claude/` or the Codex home.
-- Claude manual installs are not namespaced: use `dev-architect`, not `gaisser-agents:dev-architect`; the skills are `/dev-team` and `/content-team`.
+- Claude manual installs are not namespaced: use `software-architect`, not `gaisser-agents:software-architect`; the skills are `/software-team` and `/content-team`.
 - To remove: delete the installed files listed by `--list`.
 
 ## Customize, and name collisions
 
-- Plugin agents are scoped, for example `gaisser-agents:dev-architect`. The skill always uses the scoped names.
-- Your own `~/.claude/agents/dev-architect.md` (and so on) wins for the bare name, because user-level agents beat plugin agents. The skill uses the scoped names, so both can coexist. Name the scoped agent when you call one role directly.
+- Plugin agents are scoped, for example `gaisser-agents:software-architect`. The skill always uses the scoped names.
+- Your own `~/.claude/agents/software-architect.md` (and so on) wins for the bare name, because user-level agents beat plugin agents. The skill uses the scoped names, so both can coexist. Name the scoped agent when you call one role directly.
 - Agent and skill names are unique across teams, and every team has a required unique agent prefix (`dev-` and `content-` today).
 - Copy an agent to `~/.claude/agents/` or `~/.codex/agents/` and edit it. The installers keep your files unless you pass force.
 
@@ -215,7 +231,7 @@ Skill: `/gaisser-agents:content-team` (short form `/content-team`) in Claude Cod
 ## Troubleshooting
 
 - Agents missing: reload plugins or restart the tool. Check `claude plugin list`, and for Codex the `~/.codex/agents` and plugin folders.
-- Codex needs `[agents] enabled = true` (the default). Every team's agents follow the same rule. To change a role's reasoning effort, for example the architect's, edit `effort` in `teams/dev-team/agents/dev-architect/agent.json`, rebuild, or set `agents.default_subagent_reasoning_effort`.
+- Codex needs `[agents] enabled = true` (the default). Every team's agents follow the same rule. To change a role's reasoning effort, for example the architect's, edit `effort` in `teams/software-team/agents/software-architect/agent.json`, rebuild, or set `agents.default_subagent_reasoning_effort`.
 - Windows: Claude's Bash tool needs Git for Windows; otherwise the agents use PowerShell.
 
 ## Roadmap
