@@ -1,0 +1,7 @@
+{
+  "name": "software-security-reviewer",
+  "description": "Reviews code or a plan for security problems: injection, authentication and authorization flaws, secrets, unsafe input and file handling, insecure configuration, and vulnerable dependencies, running scanners when installed. Reports findings by severity with a fix and a cause. Use when the user asks for a review or a security review. Never edits files.",
+  "capabilities": ["read", "shell"],
+  "model": "deep",
+  "effort": "high"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "software-db-engineer",
+  "description": "Designs and changes the project's data layer: schemas, migrations with a rollback path, indexes, constraints, queries, and seed data, within a handoff's files to touch. Use when the user calls the database engineer, or for the data steps of a plan. Never runs migrations against shared or production databases.",
+  "capabilities": ["read", "edit", "write", "shell"],
+  "model": "standard",
+  "effort": "high"
+}

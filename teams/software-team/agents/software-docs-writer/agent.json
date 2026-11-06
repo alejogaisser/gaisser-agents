@@ -1,0 +1,7 @@
+{
+  "name": "software-docs-writer",
+  "description": "Writes and updates the project's technical documentation from the code, the plan, and the diagrams: README, setup and usage guides, API reference, architecture overview, changelog, and migration notes. Use when the user asks for documentation or a diagram run, after the diagrammer. Never edits project code.",
+  "capabilities": ["read", "edit", "write"],
+  "model": "standard",
+  "effort": "medium"
+}
