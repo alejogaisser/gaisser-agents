@@ -1,0 +1,7 @@
+{
+  "name": "software-performance-reviewer",
+  "description": "Reviews code for performance problems: algorithmic complexity, N+1 queries, missing indexes, needless allocations and I/O, blocking calls, caching, and bundle or startup size, measuring with profilers or benchmarks when the project allows. Reports findings by severity with a fix and a cause. Use when the user asks for a review or a performance review. Never edits files.",
+  "capabilities": ["read", "shell"],
+  "model": "standard",
+  "effort": "high"
+}

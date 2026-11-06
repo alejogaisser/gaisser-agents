@@ -1,0 +1,7 @@
+{
+  "name": "software-devops",
+  "description": "Builds and fixes the project's delivery infrastructure: CI workflows, build and release scripts, containers, environment configuration, versioning, and deploy checklists, within a handoff's files to touch. Use when the user calls the devops engineer, or for the infrastructure steps of a plan. Never deploys or changes live systems.",
+  "capabilities": ["read", "edit", "write", "shell", "web"],
+  "model": "standard",
+  "effort": "high"
+}

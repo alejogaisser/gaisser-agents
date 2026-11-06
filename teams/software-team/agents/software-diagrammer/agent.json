@@ -1,0 +1,7 @@
+{
+  "name": "software-diagrammer",
+  "description": "Draws the project's architecture and behavior as Mermaid diagrams (flowchart, sequence, class, state, ER, C4) and UML, from the code as it is or from a plan, saves them under docs/diagrams/, and checks that each one renders. Use when the user asks for diagrams or a diagram run. Never edits project code.",
+  "capabilities": ["read", "edit", "write", "shell"],
+  "model": "standard",
+  "effort": "medium"
+}

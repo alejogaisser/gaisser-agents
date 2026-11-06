@@ -8,7 +8,7 @@ Agent teams for Claude Code, Codex, and more. Call a team by domain: each team h
 
 | Team | Call it | Agents | Tools |
 |---|---|---|---|
-| `software-team` | `/gaisser-agents:software-team` (Claude Code), `$gaisser-agents:software-team` (Codex plugin) or `$software-team` (Codex manual install) | `software-architect`, `software-engineer`, `software-test-engineer` | Claude Code, Codex |
+| `software-team` | `/gaisser-agents:software-team` (Claude Code), `$gaisser-agents:software-team` (Codex plugin) or `$software-team` (Codex manual install) | `software-architect`, `software-engineer`, `software-test-engineer`; on call: `software-diagrammer`, `software-docs-writer`, `software-security-reviewer`, `software-code-reviewer`, `software-performance-reviewer`, `software-devops`, `software-db-engineer` | Claude Code, Codex |
 | `content-team` | `/gaisser-agents:content-team` (Claude Code), `$gaisser-agents:content-team` (Codex plugin) or `$content-team` (Codex manual install) | `content-brand`, `content-scout`, `content-writer`, `content-designer`, `content-qa` | Claude Code, Codex |
 
 The main conversation runs the team's skill and is the only one that talks to you. The subagents never talk to you and never delegate to each other.
@@ -164,6 +164,13 @@ Existing plans that carry the old marker are still overwritten.
 | `software-architect` | Writes the plan: handoff with acceptance criteria, design, risks, steps; revises it after design failures; keeps decision records and lessons; never edits project code | opus, effort high; Read, Grep, Glob, Edit, Write, Web | effort high, workspace-write |
 | `software-engineer` | Implements the plan within its files and scope; flags gaps | sonnet, effort medium; Read, Grep, Glob, Edit, Write, NotebookEdit, Shell, LSP | effort medium, workspace-write |
 | `software-test-engineer` | Checks every acceptance criterion and extra cases, reports per criterion, classifies failures as implementation or design; does not fix production code | sonnet, effort medium; Read, Grep, Glob, Edit, Write, Shell | effort medium, workspace-write |
+| `software-diagrammer` | Diagram run: draws Mermaid (and PlantUML when needed) flowchart, sequence, class, state, ER, and C4 diagrams from the code or the plan into `docs/diagrams/`, and checks each one renders with an installed CLI | sonnet, effort medium; Read, Grep, Glob, Edit, Write, Shell | effort medium, workspace-write |
+| `software-docs-writer` | Diagram run: writes and updates the README, guides, reference, architecture overview, and changelog from the code and the diagrams; never edits code | sonnet, effort medium; Read, Grep, Glob, Edit, Write | effort medium, workspace-write |
+| `software-security-reviewer` | Review: injection, auth, secrets, input handling, configuration, and dependencies, with installed scanners; findings by severity with a fix and a cause; never edits files | opus, effort high; Read, Grep, Glob, Shell | effort high, read-only |
+| `software-code-reviewer` | Review: correctness, contracts, test gaps, clarity, and project conventions; findings by severity with a fix and a cause; never edits files | sonnet, effort high; Read, Grep, Glob, Shell | effort high, read-only |
+| `software-performance-reviewer` | Review: complexity, N+1 queries, indexes, I/O, memory, caching, and bundle size, measured when possible; findings by severity with a fix and a cause; never edits files | sonnet, effort high; Read, Grep, Glob, Shell | effort high, read-only |
+| `software-devops` | Specialist: CI workflows, build and release scripts, containers, environment configuration, and versioning, within a handoff; never deploys | sonnet, effort high; Read, Grep, Glob, Edit, Write, Shell, Web | effort high, workspace-write |
+| `software-db-engineer` | Specialist: schemas, migrations with rollback, indexes, constraints, and queries, within a handoff; local databases only | sonnet, effort high; Read, Grep, Glob, Edit, Write, Shell | effort high, workspace-write |
 
 `Shell` is Bash plus PowerShell; `Web` is WebFetch plus WebSearch.
 
@@ -171,9 +178,12 @@ Skill: `/gaisser-agents:software-team` (short form `/software-team`) in Claude C
 
 How the software team works:
 
-Flow: `software-architect -> review gate -> software-engineer -> software-test-engineer -> (at most 2 fix cycles) -> record -> final report`.
+Core flow: `software-architect -> review gate -> software-engineer -> software-test-engineer -> (at most 2 fix cycles) -> record -> final report`.
 
-- Four modes, recognized in any language: single stage ("architect only"), full flow (default), checkpoints ("with checkpoints" or "step by step"), and direct (typos and one-line fixes, no delegation).
+- Groups on call: the core flow is the default, and the other agents run only when you call them. Say "diagrams" or "docs" for the diagram run (diagrammer, then docs writer), "review" for the three reviewers in parallel, and "devops" or "db engineer" for a specialist. Name one agent to run it alone, for example "just the security reviewer".
+- Mix freely: "full flow with review", "db engineer and then review", or "review and diagrams". Stages always run in the order plan, build, verify, review, diagram run, record, and stages nobody called are skipped.
+- Review findings rated `critical` or `high` go through the fix loop when the same run built the change; a review on its own only reports and asks before anything is fixed.
+- Modes, recognized in any language: composed run (default), checkpoints ("with checkpoints" or "step by step"), and direct (typos and one-line fixes, no delegation).
 - Handoff: every plan starts with a handoff with the fields Goal, Context, Constraints, Files to touch, Out of scope, and Acceptance criteria. The engineer receives the same handoff.
 - Acceptance criteria are pass or fail checks written before any code exists. The test engineer checks each one, tests extra cases, and reports per criterion (`pass`, `fail`, or `not tested`).
 - Failure routing: `implementation` failures go to the engineer, and `design` failures go to the architect, who revises the plan in place. There are at most 2 fix cycles in total, then the team asks you.

@@ -1,0 +1,7 @@
+{
+  "name": "software-code-reviewer",
+  "description": "Reviews code for correctness risks and quality: logic errors, error handling, readability, naming, duplication, dead code, test gaps, and consistency with the project's conventions. Reports findings by severity with a fix and a cause. Use when the user asks for a review or a code review. Never edits files.",
+  "capabilities": ["read", "shell"],
+  "model": "standard",
+  "effort": "high"
+}
