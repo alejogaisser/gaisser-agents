@@ -16,14 +16,14 @@ The task is the request that invoked this skill. If it came without a task, use 
 | Role | Subagent | Writes |
 |------|----------|--------|
 | Build or refresh the brand profile and visual system | `gaisser-agents:content-brand` | `profile.md`, `visual-system.md` |
-| Public evidence, angle, hooks, timing hypothesis | `gaisser-agents:content-scout` | `scout.md` |
+| In-depth research, visual and motion references, angle, hooks, timing hypothesis | `gaisser-agents:content-scout` | `scout.md`, `scout-refs/` |
 | All copy and alt text | `gaisser-agents:content-writer` | `copy.md` |
-| Composition spec and the local render | `gaisser-agents:content-designer` | `design-spec.md`, `code/`, `out/` |
+| Art direction, composition and motion spec, and the local render | `gaisser-agents:content-designer` | `design-spec.md`, `code/`, `out/` |
 | Verdict per check with evidence | `gaisser-agents:content-qa` | `qa.md` |
 
 If a subagent in this table is not available under that name, look for the same name without a plugin prefix, because manual installs have none. If no subagents are available at all, use the single-session fallback at the end of this file.
 
-No subagent holds a connector tool. You broker every remote call yourself and pass results to the subagents as files.
+Only `gaisser-agents:content-scout` may use connectors, and only to search, read, and download research references; it never changes anything through them. You broker every other remote call yourself and pass results to the subagents as files.
 
 ## Project context
 
@@ -32,7 +32,7 @@ Teams never ship personal or brand data. Every brand fact lives in the consuming
 | File | Default path | Template | Contents | Written by | Required |
 |------|--------------|----------|----------|------------|----------|
 | Profile | `team-context/content-team/profile.md` | `assets/profile.md` | audience, language, voice rules, pillars, allowed and forbidden claims | `gaisser-agents:content-brand` | yes, before production |
-| Visual system | `team-context/content-team/visual-system.md` | `assets/visual-system.md` | the nine rule slots a render is checked against | `gaisser-agents:content-brand` | yes, before production |
+| Visual system | `team-context/content-team/visual-system.md` | `assets/visual-system.md` | the rule slots a render is checked against, including motion | `gaisser-agents:content-brand` | yes, before production |
 | Media policy | `team-context/content-team/media-policy.md` | `assets/media-policy.md` | per asset class `allow`, `deny` or `ask`; nothing else | the user | yes, before production |
 | Publishing policy | `team-context/content-team/publishing-policy.md` | `assets/publishing-policy.md` | the outward-action mode, approved channels, approver, never-allowed list | the user | yes, before any outward action |
 | Tool preferences | `team-context/content-team/tool-preferences.md` | `assets/tool-preferences.md` | the render path per format, allowed vendors, account aliases, budget; never a secret value | the user | no; default is local-only and zero spend |
@@ -65,10 +65,10 @@ State flow: `briefed -> scouted -> drafted -> designed -> qa-reviewed -> ready-f
 ## Full run
 
 1. **Brief.** Check the required context files. Write `brief.md`: the request, the formats, the platform, and the decisions taken. Resolve the render path for each format from the tool preferences; with no file, use the local path. Ask the user about any missing decision that would change the result.
-2. **Scout.** Delegate to `gaisser-agents:content-scout` with the run folder, the paths, and the brief. If the user dropped an export or screenshot into the run folder, say so; never ask for one. `scout.md` always carries `## Working broadly`, the primary output. `## Worked for you` exists only when such an export is present, carries the export's date, and is the only place a claim about the user's own audience may appear.
+2. **Scout.** Delegate to `gaisser-agents:content-scout` with the run folder, the paths, the brief, and the path of `references/scout-research.md`. If the user dropped an export or screenshot into the run folder, say so; never ask for one. `scout.md` always carries `## Working broadly`, the primary output. `## Worked for you` exists only when such an export is present, carries the export's date, and is the only place a claim about the user's own audience may appear.
 3. **Copy.** Delegate to `gaisser-agents:content-writer`. Create `assets.md` (one row per asset: id, path, provenance class, source or rights note, policy resolution) unless the run uses only coded graphics.
-4. **Design.** Delegate to `gaisser-agents:content-designer` with the render path per format. For a local path it renders to `out/`. For a remote path it returns `design-spec.md` only; you execute that spec against the remote tool yourself, apply the adapter rules below, and place the exported files in `out/`. The spec is concrete enough that you must not re-derive a layout decision; if it is not, send it back.
-5. **QA.** Delegate to `gaisser-agents:content-qa` with the rendered files. Route each failure to its owning role. At most 2 fix cycles, then stop and ask the user. A content change after QA runs QA again.
+4. **Design.** Delegate to `gaisser-agents:content-designer` with the render path per format and, for any video or animated format, the paths of `references/motion-design.md`, `references/kinetic-typography.md`, `references/video-pipeline.md`, and `references/visual-fx.md`. For a local path it renders to `out/`. For a remote path it returns `design-spec.md` only; you execute that spec against the remote tool yourself, apply the adapter rules below, and place the exported files in `out/`. The spec is concrete enough that you must not re-derive a layout decision; if it is not, send it back.
+5. **QA.** Delegate to `gaisser-agents:content-qa` with the rendered files, the layout reports and contact sheets, and the path of `references/qa-checks.md`. QA never reviews a video frame by frame; on a fix cycle, name only the checks and pieces to re-run. Route each failure to its owning role. At most 2 fix cycles, then stop and ask the user. A content change after QA runs QA again.
 6. **Review gate.** Show the user the drafts, the QA verdicts, and any `limited` check. Wait for approval before `delivered`. A user exception to a failed check is scoped and marks delivery `limited`.
 7. **Deliver.** Write `delivery.md`: what the user gets, where it is, and the manual posting package. Then give the final report.
 
@@ -87,7 +87,7 @@ Drafts only by default. Read the outward-action mode only from the publishing po
 - Subagents start with an empty context. Put everything they need in the delegation message: the task, the run folder, the resolved context paths, relevant files, and earlier results.
 - Run the stages in order and wait for each result before the next stage.
 - Do not redo a subagent's work yourself. If a stage fails, tell the user.
-- The check list that `gaisser-agents:content-qa` follows is in `references/qa-checks.md`.
+- The check list that `gaisser-agents:content-qa` follows is in `references/qa-checks.md`. The research playbook is `references/scout-research.md`; the designer's guides are `references/motion-design.md`, `references/kinetic-typography.md`, `references/video-pipeline.md`, and `references/visual-fx.md`. Resolve these paths inside this skill and pass them in each delegation.
 
 ## Final report
 
@@ -101,4 +101,4 @@ Always end with these five sections, in every mode. For a single role, one line 
 
 ## Single-session fallback
 
-Use this only when you cannot delegate to subagents. Tell the user that the content team is running in single-session mode, then run the same stages yourself, in order, with the same context rules, review gate, fix-cycle limit, and final report. Keep the roles' separation in your files: write only the artifact of the stage you are in, and run QA last, on the rendered pixels, as if it came from someone else. You lose separate contexts and per-role tool restrictions, so take extra care not to treat evidence as the user's own results.
+Use this only when you cannot delegate to subagents. Tell the user that the content team is running in single-session mode, then run the same stages yourself, in order, with the same context rules, review gate, fix-cycle limit, and final report. Keep the roles' separation in your files: write only the artifact of the stage you are in, and run QA last, on the rendered output, with the evidence tiers in `references/qa-checks.md`, as if it came from someone else. You lose separate contexts and per-role tool restrictions, so take extra care not to treat evidence as the user's own results.

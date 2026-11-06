@@ -1,7 +1,7 @@
 {
   "name": "content-scout",
-  "description": "Researches public trend and format evidence for one content request and writes the angle, hook options, and a timing hypothesis, keeping broad evidence apart from the user's own results. Use at the start of each content run, before any copy is written.",
-  "capabilities": ["read", "write", "web"],
+  "description": "Researches one content request in depth across platforms, creators, publications, and visual sites such as Pinterest, saves visual and motion references, and writes the angle, hook options, direction, and a timing hypothesis, keeping broad evidence apart from the user's own results. Use at the start of each content run, before any copy is written.",
+  "capabilities": "inherit",
   "model": "standard",
   "effort": "high"
 }

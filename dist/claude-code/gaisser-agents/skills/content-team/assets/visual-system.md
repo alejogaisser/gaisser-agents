@@ -68,6 +68,16 @@ Font files stay in your project and are never committed to a shared repository.
 ## 9. Precedence
 - What wins when a per-format override conflicts with a global rule:
 
+## 10. Motion
+Optional. Any value left empty falls back to the defaults in the content-team skill's `references/motion-design.md`, and the designer marks each fallback in the spec.
+- Motion personality in one sentence (for example calm and precise, or loud and playful):
+- Duration scale overrides:
+- Easing overrides:
+- Allowed scene transitions:
+- Maximum simultaneous motions:
+- Motion that is never allowed:
+- Music or sound rule:
+
 ## Open list
 Cases the sources do not settle. Always include a title too long for its level, a photo that is dark or missing, and a page with no suitable decorative element.
 - Case:
