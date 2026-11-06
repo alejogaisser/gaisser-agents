@@ -299,8 +299,8 @@ foreach ($t in $Targets) {
 if ((-not $DryRun) -and (-not $script:Failed)) {
     Write-Output ''
     Write-Output 'Restart the tool (or start a new session) to load new agents and skills.'
-    Write-Output "Claude manual installs are not namespaced: use 'dev-architect', not 'gaisser-agents:dev-architect', and call a team with its skill, for example /dev-team."
-    Write-Output 'In Codex, call a team with its skill, for example $dev-team.'
+    Write-Output "Claude manual installs are not namespaced: use 'software-architect', not 'gaisser-agents:software-architect', and call a team with its skill, for example /software-team."
+    Write-Output 'In Codex, call a team with its skill, for example $software-team.'
     Write-Output 'To update later: git pull, then re-run this script with -Force.'
 }
 

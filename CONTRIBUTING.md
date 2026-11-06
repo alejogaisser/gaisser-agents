@@ -28,7 +28,7 @@ Commit sources and regenerated outputs together. CI fails when they are out of s
 
 - One plugin (`gaisser-agents`) carries every team: each team contributes its agents plus one entry skill named like the team, invoked `/<plugin>:<team>` in Claude Code and `$<team>` in Codex.
 - The main conversation orchestrates: the entry skill runs in the main session, and the subagents never talk to the user or to each other.
-- Team names end in `-team` (for example `dev-team`).
+- Team names end in `-team` (for example `software-team`).
 
 ## 4. Improve an agent or skill
 
@@ -90,11 +90,11 @@ Add an entry to `renames` in `catalog.json`: the old plugin name maps to the cur
 - Limits: 500 lines, 1024-character description.
 - Skill files: `assets/` and `references/` are flat folders of text files only (`md`, `txt`, `json`, `csv`, `yaml`, `yml`, lowercase kebab-case names), at most 64 KiB each, and are copied verbatim into every generated plugin.
 - Project context files convention: teams never ship personal or brand data (voice, people, palettes, fonts, photos). The entry skill declares them in a `## Project context` section (file, default path, template, required). The default path is `team-context/<team>/<file>.md`, overridable in the project's CLAUDE.md or AGENTS.md. If a required file is missing, the skill copies its template from `assets/`, asks the user to fill it in, and stops; the resolved paths are passed to every subagent. Binary inputs such as fonts stay in the user's project and `.gitignore` excludes font files.
-- The dev-team skill holds the canonical handoff template; the architect prompt repeats its six field names in order, and a test keeps them in sync.
+- The software-team skill holds the canonical handoff template; the architect prompt repeats its six field names in order, and a test keeps them in sync.
 
 ## 10. Built and planned teams
 
-- `dev-team`: built. Architect, coder, and tester for code changes, on both targets.
+- `software-team`: built. Architect, engineer, and test engineer for code changes, on both targets.
 - `content-team`: built. Five roles (scout, writer, designer, brand, QA) for social content, on both targets. Local coded rendering is the default path; remote design tools are optional.
 - `finance-team`: to be designed with the owner first.
 

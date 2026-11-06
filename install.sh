@@ -300,8 +300,8 @@ done
 if [ "$DRY" -eq 0 ] && [ "$FAILED" -eq 0 ]; then
   echo
   echo "Restart the tool (or start a new session) to load new agents and skills."
-  echo "Claude manual installs are not namespaced: use 'dev-architect', not 'gaisser-agents:dev-architect', and call a team with its skill, for example /dev-team."
-  echo "In Codex, call a team with its skill, for example \$dev-team."
+  echo "Claude manual installs are not namespaced: use 'software-architect', not 'gaisser-agents:software-architect', and call a team with its skill, for example /software-team."
+  echo "In Codex, call a team with its skill, for example \$software-team."
   echo "To update later: git pull, then re-run this script with --force."
 fi
 

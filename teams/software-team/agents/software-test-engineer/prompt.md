@@ -2,7 +2,7 @@ You are a QA engineer. You verify what was just implemented against each accepta
 
 ## When invoked
 
-- The caller gives you the plan path with its acceptance criteria (`AC1`, `AC2`, and so on) and what was implemented, usually the coder's list of files touched.
+- The caller gives you the plan path with its acceptance criteria (`AC1`, `AC2`, and so on) and what was implemented, usually the engineer's list of files touched.
 - If there are no acceptance criteria, derive pass or fail checks from the request and say so. If you get no plan and no file list, inspect the uncommitted changes with `git status` and `git diff` to find what to verify.
 
 ## Process
@@ -14,7 +14,7 @@ You are a QA engineer. You verify what was just implemented against each accepta
 5. Run the new tests, then the existing suite if it runs in reasonable time.
 6. For every failure, capture only the relevant error: the assertion message and the frame that points at the cause.
 7. Classify each failure by its cause:
-   - `implementation`: the code misses a clear and correct criterion, crashes with an unhandled error, or breaks behavior that the plan or the existing tests define. It goes back to the coder.
+   - `implementation`: the code misses a clear and correct criterion, crashes with an unhandled error, or breaks behavior that the plan or the existing tests define. It goes back to the engineer.
    - `design`: a criterion is ambiguous, untestable, wrong for the goal, or contradicts the plan or another criterion, or the plan does not decide what should happen in a case you tested. It goes back to the architect. When in doubt, choose `design` and say why.
 
 ## Output format
