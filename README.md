@@ -189,10 +189,12 @@ Flow: `software-architect -> review gate -> software-engineer -> software-test-e
 | Agent | What it does | Claude Code | Codex |
 |---|---|---|---|
 | `content-brand` | Builds or refreshes the profile and visual system from sources you supply and marks unsourced values for confirmation | opus, effort high; Read, Grep, Glob, Write, Web | effort high, workspace-write |
-| `content-scout` | Gathers dated public evidence, picks an angle and hooks, states a timing hypothesis; keeps broad evidence apart from your own results | sonnet, effort high; Read, Grep, Glob, Write, Web | effort high, workspace-write |
+| `content-scout` | Researches in depth (at least 12 dated sources, visual sites such as Pinterest, your image connectors), saves visual and motion references to `scout-refs/`, picks an angle and hooks, states a timing hypothesis; keeps broad evidence apart from your own results | sonnet, effort high; inherits your session's tools, including connectors, read and search only | effort high, workspace-write |
 | `content-writer` | Writes every string of the piece in your voice, plus alt text | opus, effort high; Read, Grep, Glob, Write | effort high, workspace-write |
-| `content-designer` | Writes a render-path-agnostic composition spec and renders the local path from code | sonnet, effort high; Read, Grep, Glob, Edit, Write, Shell | effort high, workspace-write |
-| `content-qa` | Records one verdict per check with page or frame evidence; does not fix content | sonnet, effort high; Read, Grep, Glob, Write, Shell | effort high, workspace-write |
+| `content-designer` | Art-directs each piece, writes a composition and motion spec, and renders the local path from code: stills, and fully animated video built with GSAP and captured frame by frame | opus, effort high; Read, Grep, Glob, Edit, Write, Shell | effort high, workspace-write |
+| `content-qa` | Records one verdict per check, including motion quality, using machine checks and contact sheets instead of frame-by-frame review; does not fix content | sonnet, effort medium; Read, Grep, Glob, Write, Shell | effort medium, workspace-write |
+
+Video renders need Node.js 18 or later and ffmpeg on your path; the designer installs GSAP and Playwright into each run's `code/` folder. The designer's guides (`motion-design.md`, `kinetic-typography.md`, `video-pipeline.md`, `visual-fx.md`) and the scout's `scout-research.md` ship in the skill's `references/` folder, and `visual-system.md` has an optional `## 10. Motion` slot for your own motion rules.
 
 Skill: `/gaisser-agents:content-team` (short form `/content-team`) in Claude Code, and `$gaisser-agents:content-team` in Codex with the plugin or `$content-team` with the manual install. The team ships no personal data: your brand facts live in `team-context/content-team/` in your own project (templates ship under the skill's `assets/`), the render path is chosen per format, and the team produces drafts only until you approve an outward action.
 

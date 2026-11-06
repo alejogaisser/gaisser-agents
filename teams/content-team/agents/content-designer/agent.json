@@ -1,7 +1,7 @@
 {
   "name": "content-designer",
-  "description": "Turns approved copy into a render-path-agnostic composition spec and renders the local path (stills and video) from code, following the project's visual system. Use after the copy is drafted, or to apply layout fixes reported by QA.",
+  "description": "Art-directs approved copy into a render-path-agnostic composition spec with a full motion timeline, and renders the local path from code: stills, and fully animated video built with GSAP and captured frame by frame. Use after the copy is drafted, or to apply layout or motion fixes reported by QA.",
   "capabilities": ["read", "edit", "write", "shell"],
-  "model": "standard",
+  "model": "deep",
   "effort": "high"
 }

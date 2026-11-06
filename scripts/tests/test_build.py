@@ -26,7 +26,9 @@ CONTENT_AGENTS = ("content-brand", "content-scout", "content-writer", "content-d
 CONTENT_FILES = (
     "assets/profile.md", "assets/visual-system.md", "assets/media-policy.md",
     "assets/publishing-policy.md", "assets/tool-preferences.md",
-    "references/adapter-status.md", "references/qa-checks.md",
+    "references/adapter-status.md", "references/qa-checks.md", "references/motion-design.md",
+    "references/kinetic-typography.md", "references/video-pipeline.md", "references/visual-fx.md",
+    "references/scout-research.md",
 )
 
 
@@ -409,7 +411,7 @@ class SyncTest(TempRepoCase):
         self.assertEqual(self.run_check(), 1)
 
     def test_modified_codex_plugin_file(self):
-        self.edit_text("dist/codex-plugin/gaisser-agents/plugin.json", lambda t: t.replace("4.0.0", "9.9.9"))
+        self.edit_text("dist/codex-plugin/gaisser-agents/plugin.json", lambda t: t.replace("4.1.0", "9.9.9"))
         self.assertTrue(has_error(self.check_findings(), "out of date"))
 
     def test_modified_codex_marketplace(self):
@@ -471,7 +473,7 @@ class VersionBumpTest(TempRepoCase):
         self.assertTrue(has_error(f, "plugin.version was not bumped", "catalog.json"), f)
 
     def test_change_with_bump_passes(self):
-        self.edit_json("catalog.json", lambda d: d["plugin"].update(version="4.0.1"))
+        self.edit_json("catalog.json", lambda d: d["plugin"].update(version="4.1.1"))
         self.change_prompt_and_build()
         self.assertEqual(errors_of(build.check_version_bumps(self.root, "HEAD~1")), [])
 
@@ -915,7 +917,7 @@ class Part1Test(TeamFixture):
             want.add("dist/%s/gaisser-agents/skills/content-team/SKILL.md" % tool)
             for f in CONTENT_FILES:
                 want.add("dist/%s/gaisser-agents/skills/content-team/%s" % (tool, f))
-        self.assertEqual(len(want), 13 + 5 * 2 + 3 * 8)
+        self.assertEqual(len(want), 13 + 5 * 2 + 3 * 13)
         self.assertEqual(set(self.outputs()), want)
 
     def test_t2_marketplaces_and_renames(self):
