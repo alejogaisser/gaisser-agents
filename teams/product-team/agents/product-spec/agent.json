@@ -1,0 +1,7 @@
+{
+  "name": "product-spec",
+  "description": "Turns an approved product brief into a lean spec: user stories, a cut MVP scope, an explicit out-of-scope list, success metrics with targets, and testable acceptance criteria that the software team can build from. Writes spec.md. Use after the brief is approved, or to apply review findings to the spec.",
+  "capabilities": ["read", "edit", "write"],
+  "model": "deep",
+  "effort": "high"
+}

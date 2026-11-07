@@ -1,0 +1,7 @@
+{
+  "name": "product-ux",
+  "description": "Designs the user experience of an approved spec: user flows, screen inventory, empty, loading, and error states, microcopy, accessibility notes, and a self-contained clickable HTML prototype. Writes the ux/ folder. Use after the spec is approved, or to apply review findings to the design.",
+  "capabilities": ["read", "edit", "write"],
+  "model": "standard",
+  "effort": "high"
+}
