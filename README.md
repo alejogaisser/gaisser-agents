@@ -10,6 +10,7 @@ Agent teams for Claude Code, Codex, and more. Call a team by domain: each team h
 |---|---|---|---|
 | `software-team` | `/gaisser-agents:software-team` (Claude Code), `$gaisser-agents:software-team` (Codex plugin) or `$software-team` (Codex manual install) | `software-architect`, `software-engineer`, `software-test-engineer`; on call: `software-debugger`, `software-diagrammer`, `software-docs-writer`, `software-security-reviewer`, `software-code-reviewer`, `software-performance-reviewer`, `software-devops`, `software-db-engineer` | Claude Code, Codex |
 | `content-team` | `/gaisser-agents:content-team` (Claude Code), `$gaisser-agents:content-team` (Codex plugin) or `$content-team` (Codex manual install) | `content-brand`, `content-scout`, `content-writer`, `content-designer`, `content-qa` | Claude Code, Codex |
+| `product-team` | `/gaisser-agents:product-team` (Claude Code), `$gaisser-agents:product-team` (Codex plugin) or `$product-team` (Codex manual install) | `product-discovery`, `product-spec`, `product-ux`, `product-reviewer` | Claude Code, Codex |
 
 The main conversation runs the team's skill and is the only one that talks to you. The subagents never talk to you and never delegate to each other.
 
@@ -56,7 +57,7 @@ install does not auto-update: rebuild, then re-add or update the marketplace to 
 
 Codex plugins can carry skills but not custom agents, so Codex needs two steps: the plugin for the skills, and the install script for the subagents of every team.
 
-1. Add the marketplace and install the plugin (the `software-team` and `content-team` skills, and the skill of every team added later):
+1. Add the marketplace and install the plugin (the `software-team`, `content-team`, and `product-team` skills, and the skill of every team added later):
 
    ```
    codex plugin marketplace add alejogaisser/gaisser-agents
@@ -88,13 +89,14 @@ $gaisser-agents:software-team add rate limiting to the API with checkpoints
 $software-team add rate limiting to the API with checkpoints
 ```
 
-The same forms work for every team: replace `software-team` with `content-team` and the task with a content brief. The first form is the full plugin-scoped name. The short `/software-team` works while no other skill claims that name. Codex prefixes a skill that comes from a plugin, so the plugin install is `$gaisser-agents:software-team` and the manual install, which copies a loose skill file, is `$software-team`.
+The same forms work for every team: replace `software-team` with `content-team` and the task with a content brief, or with `product-team` and the task with an idea to plan. The first form is the full plugin-scoped name. The short `/software-team` works while no other skill claims that name. Codex prefixes a skill that comes from a plugin, so the plugin install is `$gaisser-agents:software-team` and the manual install, which copies a loose skill file, is `$software-team`.
 
 Router tip for your CLAUDE.md or AGENTS.md:
 
 ```
 For non-trivial code changes, use the software-team skill (/software-team in Claude Code, $gaisser-agents:software-team in Codex).
 For content pieces (carousels, posts, scripts), use the content-team skill (/content-team in Claude Code, $gaisser-agents:content-team in Codex).
+To turn an idea into a closed product plan before building, use the product-team skill (/product-team in Claude Code, $gaisser-agents:product-team in Codex).
 For work on a single role, name the scoped agent, for example gaisser-agents:software-architect.
 Small changes (typos, one-line fixes) are made directly, without delegating.
 ```
@@ -209,6 +211,19 @@ Video renders need Node.js 18 or later and ffmpeg on your path; the designer ins
 
 Skill: `/gaisser-agents:content-team` (short form `/content-team`) in Claude Code, and `$gaisser-agents:content-team` in Codex with the plugin or `$content-team` with the manual install. The team ships no personal data: your brand facts live in `team-context/content-team/` in your own project (templates ship under the skill's `assets/`), the render path is chosen per format, and the team produces drafts only until you approve an outward action.
 
+### product-team
+
+| Agent | What it does | Claude Code | Codex |
+|---|---|---|---|
+| `product-discovery` | Researches the problem behind an idea: users, today's workarounds, competitors, and evidence labelled `evidence`, `signal`, or `assumption`, plus the riskiest assumptions and how to test them; writes `brief.md` | opus, effort high; Read, Grep, Glob, Write, Web | effort high, workspace-write |
+| `product-spec` | Cuts the MVP and writes `spec.md`: user stories, Later, Out of scope, at most 3 success metrics with targets, and testable acceptance criteria in the software team's format | opus, effort high; Read, Grep, Glob, Edit, Write | effort high, workspace-write |
+| `product-ux` | Designs flows, screens, states, microcopy, and accessibility notes, and builds a self-contained clickable `ux/prototype.html` | sonnet, effort high; Read, Grep, Glob, Edit, Write | effort high, workspace-write |
+| `product-reviewer` | Reviews the whole plan as a skeptic, traces every story to criteria and screens, and returns a `closed` or `open` verdict with findings routed to discovery, spec, UX, or you; never edits the plan | opus, effort medium; Read, Grep, Glob, Write | effort medium, workspace-write |
+
+Skill: `/gaisser-agents:product-team` (short form `/product-team`) in Claude Code, and `$gaisser-agents:product-team` in Codex with the plugin or `$product-team` with the manual install. A run asks up to 5 intake questions, writes everything to `docs/product/<slug>/`, stops for your approval after the problem, the MVP scope, and the design, and allows at most 2 fix cycles after the review. The team plans and never builds: the final report hands `spec.md` to the software team. An optional `team-context/product-team/product.md` (template under the skill's `assets/`) gives every run your product's context.
+
+Model choice follows Anthropic's model guide: the stages where judgment matters most (finding the real problem, cutting scope, and reviewing) run on Opus, and the prototype, which is mostly code and copy generation, runs on Sonnet. The reviewer runs at effort medium, Opus 5.5's default, because it reads a short, finished plan instead of researching.
+
 ## Manual install details
 
 `install.sh` (macOS, Linux, Git Bash) and `install.ps1` (Windows PowerShell 5.1 and PowerShell 7) copy files without a plugin manager.
@@ -225,7 +240,7 @@ Skill: `/gaisser-agents:content-team` (short form `/content-team`) in Claude Cod
 | `-n`, `--dry-run` | `-DryRun` | Show what would happen |
 
 - Existing files are skipped unless you pass force. With force, the old copy moves to `agent-catalog-backups/<timestamp>/` under `.claude/` or the Codex home.
-- Claude manual installs are not namespaced: use `software-architect`, not `gaisser-agents:software-architect`; the skills are `/software-team` and `/content-team`.
+- Claude manual installs are not namespaced: use `software-architect`, not `gaisser-agents:software-architect`; the skills are `/software-team`, `/content-team`, and `/product-team`.
 - To remove: delete the installed files listed by `--list`.
 
 ## Customize, and name collisions

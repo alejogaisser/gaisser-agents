@@ -1,0 +1,10 @@
+{
+  "name": "product-team",
+  "displayName": "Product Team",
+  "agentPrefix": "product-",
+  "description": "The product team: discovery, spec, UX, and reviewer subagents plus the product-team skill that takes a rough idea to a closed product plan, with an evidence-backed brief, a scoped MVP with metrics and testable acceptance criteria, a clickable prototype, and a review that closes every gap before anything is built.",
+  "category": "productivity",
+  "keywords": ["team", "product", "discovery", "spec", "prd", "ux", "prototype", "planning"],
+  "color": "green",
+  "targets": ["claude-code", "codex"]
+}

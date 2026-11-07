@@ -96,6 +96,7 @@ Add an entry to `renames` in `catalog.json`: the old plugin name maps to the cur
 
 - `software-team`: built. Architect, engineer, and test engineer for code changes, plus groups called on demand (debugger, diagram run, review, devops and database specialists), on both targets.
 - `content-team`: built. Five roles (scout, writer, designer, brand, QA) for social content, on both targets. Local coded rendering is the default path; remote design tools are optional.
+- `product-team`: built. Discovery, spec, UX, and reviewer take an idea to a closed product plan with three approval gates, on both targets. It plans only and hands the spec to `software-team`.
 - `finance-team`: to be designed with the owner first.
 
 ## 11. Test locally

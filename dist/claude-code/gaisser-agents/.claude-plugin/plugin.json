@@ -1,8 +1,8 @@
 {
   "name": "gaisser-agents",
   "displayName": "Gaisser Agents",
-  "version": "4.3.0",
-  "description": "Agent teams you call by domain, a software team and a content team, each with its own subagents plus one entry skill that runs them.",
+  "version": "4.4.0",
+  "description": "Agent teams you call by domain, a software team, a content team, and a product team, each with its own subagents plus one entry skill that runs them.",
   "author": {
     "name": "Alejo Gaisser",
     "url": "https://github.com/alejogaisser"
@@ -15,6 +15,7 @@
     "teams",
     "orchestration",
     "planning",
-    "testing"
+    "testing",
+    "product"
   ]
 }
