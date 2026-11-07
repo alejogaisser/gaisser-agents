@@ -1,6 +1,6 @@
 ---
 name: software-team
-description: "Calls the software team: the core flow (architect, engineer, test engineer) plans, implements, and verifies a code change with a structured handoff, testable acceptance criteria, a review gate, and at most 2 fix cycles. Groups run only when called and can be mixed: a diagram run (diagrammer and docs writer), a review (security, code, and performance reviewers), and the devops and database specialists. Keeps decision records and lessons, and ends with a five-section report. Use when the user calls the software team or asks, in any language, for the full flow, checkpoints, a single role such as \"architect only\", diagrams or docs, a review, the devops or database engineer, any mix of these, or a non-trivial feature, refactor, or multi-file bug fix."
+description: "Calls the software team: the core flow (architect, engineer, test engineer) plans, implements, and verifies a code change with a structured handoff, testable acceptance criteria, a review gate, and at most 2 fix cycles. Groups run only when called and can be mixed: a debugger that reproduces a bug and finds its root cause, a diagram run (diagrammer and docs writer), a review (security, code, and performance reviewers), and the devops and database specialists. Keeps decision records and lessons, and ends with a five-section report. Use when the user calls the software team or asks, in any language, for the full flow, checkpoints, a single role such as \"architect only\", debugging a bug, diagrams or docs, a review, the devops or database engineer, any mix of these, or a non-trivial feature, refactor, or multi-file bug fix."
 license: Apache-2.0
 ---
 
@@ -12,10 +12,11 @@ The task is the request that invoked this skill. If it came without a task, use 
 
 ## Agents
 
-The team has a core flow and three groups that run only when the user calls them. Having more agents never means a run uses all of them.
+The team has a core flow and four groups that run only when the user calls them. Having more agents never means a run uses all of them.
 
 | Group | Role | Subagent |
 |-------|------|----------|
+| Debug | Reproduce a bug, find its root cause, and leave a failing reproduction test | `software_debugger` |
 | Core | Plan, revise the plan, and record decisions and lessons | `software_architect` |
 | Core | Implement | `software_engineer` |
 | Core | Verify against the acceptance criteria | `software_test_engineer` |
@@ -31,31 +32,33 @@ If a subagent in this table is not available under that name, look for the same 
 
 ## Choose what runs
 
-Recognize these requests in any language, for example "solo arquitecto", "con checkpoints", "revisión", "diagramas", or "paso a paso".
+Recognize these requests in any language, for example "solo arquitecto", "con checkpoints", "revisión", "diagramas", "debug", or "paso a paso".
 
 ### Calls
 
 | The user says | What runs |
 |---------------|-----------|
 | Nothing special, for a non-trivial change | The full flow: architect, engineer, test engineer |
+| "debug", "diagnose", "find the bug", "why does this fail" | The debugger |
 | "diagrams", "diagram run", "document this", "docs" | The diagram run: diagrammer, then docs writer |
 | "review", "code review", "audit this" | The review: security, code, and performance reviewers |
 | "devops", "CI", "pipeline", "Docker", "release" as the agent to use | The devops specialist |
 | "db engineer", "database", "migration", "schema" as the agent to use | The database specialist |
 | One agent by role, such as "architect only", "just the security reviewer", or "only the docs writer" | That agent alone |
 
-Never add a group or an agent the user did not call. When one would clearly help, such as a review after a change to authentication, suggest it in the final report instead.
+Never add a group or an agent the user did not call. When one would clearly help, such as a review after a change to authentication, or the debugger for a bug whose cause is unknown, suggest it in the final report instead.
 
 ### Mixing
 
-The user can combine any calls, for example "full flow with review", "db engineer and then review", "review and diagrams", or "devops plus the code reviewer". Build the run from the stages called, always in this order, and skip every stage nobody called:
+The user can combine any calls, for example "full flow with review", "debug and then the full flow", "db engineer and then review", "review and diagrams", or "devops plus the code reviewer". Build the run from the stages called, always in this order, and skip every stage nobody called:
 
-1. **Plan:** the architect
-2. **Build:** the engineer and any specialists called
-3. **Verify:** the test engineer
-4. **Review:** the reviewers called
-5. **Diagram run:** the diagrammer and the docs writer called
-6. **Record**, when the architect ran, then the **final report**
+1. **Diagnose:** the debugger
+2. **Plan:** the architect
+3. **Build:** the engineer and any specialists called
+4. **Verify:** the test engineer
+5. **Review:** the reviewers called
+6. **Diagram run:** the diagrammer and the docs writer called
+7. **Record**, when the architect ran, then the **final report**
 
 A request for "the full flow" plus another call runs the whole core and the added stages. Within a stage, run only the members called; a group call runs every member.
 
@@ -71,24 +74,29 @@ When a build agent (the engineer or a specialist) runs without the architect, fi
 
 ## Stages
 
-Run only the stages the run includes, in this order. Steps 0 to 2 belong to the Plan stage.
+Run only the stages the run includes, in this order. Step 0 is the Diagnose stage, and steps 1 to 3 belong to the Plan stage.
 
-0. **Brief and size.** Before the architect starts, collect every requirement and constraint the user has given, and ask the user about any missing decision that would change the design. Do not send new requirements while the architect is working; if some arrive, wait for its report and send them as a revision. Then size the task:
+0. **Debugger.** Delegate everything the user gave about the bug: the expected and the actual behavior, error messages, stack traces, logs, inputs, environment, steps to reproduce, and any commit, branch, or files they named. Then route its report:
+   - **Not reproduced, or two causes remain:** stop, show the report, and ask the user for more information or whether to continue with the most likely cause.
+   - **With the architect in the run:** send the debugger's report, copied verbatim, with the task. Ask the architect to plan the fix from the root cause, to cover the places the report lists under Reach or put them in Out of scope, and to make each reproduction test an acceptance criterion: `ACn: <test> passes`.
+   - **With a build agent and no architect:** if the cause is `design`, stop and ask the user whether to add the architect or to decide the fix themselves. Otherwise fill in the handoff from the report, with the proposed fix as Files to touch and each reproduction test as an acceptance criterion.
+   - **Debugger alone:** fix nothing. Report the root cause and the proposed fix, and ask the user whether to send it to the team.
+1. **Brief and size.** Before the architect starts, collect every requirement and constraint the user has given, and ask the user about any missing decision that would change the design. Do not send new requirements while the architect is working; if some arrive, wait for its report and send them as a revision. Then size the task:
    - **Small:** a clear request that touches at most 3 files and does not change the architecture. Run the architect on the standard model tier (for example `sonnet`) when your tool lets you choose the model per delegation.
    - **Large:** anything else, or when unsure. Run the architect on its default tier.
-1. **Architect.** Delegate the task with every constraint you know, the plan path `docs/plan.md`, the memory paths from Project memory, and the handoff template below, copied verbatim. When the run includes specialists, also ask the architect to name the owner of every step: `engineer`, `devops`, or `db-engineer`. For the rest of the run, use the plan path the architect reports.
-2. **Review gate.** If the architect reports `Review gate: yes`, meaning the plan touches more than 3 files or changes the architecture, stop before the Build stage starts: summarize the plan and its acceptance criteria for the user, give the plan path, and wait for approval. Also stop when the architect lists open questions that block the work. If the user asks for changes, send them to the architect and apply the review gate again.
-3. **Build.** Delegate to each build agent in the run with the plan path and the plan's `## Handoff` section, copied verbatim, or with the handoff you filled in. When specialists are in the run, give each agent only the steps it owns, and run them one after another in the plan's order so that no two write at the same time. Build agents implement only what the plan says. If one reports a gap or a step that does not fit the code, stop and ask the user whether to re-plan with the architect or to decide the gap themselves.
-4. **Test engineer.** Delegate with the plan path, the acceptance criteria, and every build agent's list of files touched. The test engineer checks every criterion, tests cases beyond them, and does not fix production code.
-5. **Review.** Delegate to every reviewer in the run at the same time, because they only read. Give each the same target: the files touched in this run when there was a Build stage, otherwise what the user named, otherwise the uncommitted changes. Pass the plan path when there is one. Merge their findings into one list, most severe first, and drop duplicates that point at the same `path:line`.
-6. **Fix loop.** Failures come from the test engineer when it reports `Verdict: fail`, and from `critical` or `high` review findings, but only when this run had a Build stage. Route each one by its cause. If one has no cause, classify it yourself: `implementation` when the code misses a clear and correct requirement, `design` otherwise.
+2. **Architect.** Delegate the task with every constraint you know, the plan path `docs/plan.md`, the memory paths from Project memory, and the handoff template below, copied verbatim. When the run includes specialists, also ask the architect to name the owner of every step: `engineer`, `devops`, or `db-engineer`. For the rest of the run, use the plan path the architect reports.
+3. **Review gate.** If the architect reports `Review gate: yes`, meaning the plan touches more than 3 files or changes the architecture, stop before the Build stage starts: summarize the plan and its acceptance criteria for the user, give the plan path, and wait for approval. Also stop when the architect lists open questions that block the work. If the user asks for changes, send them to the architect and apply the review gate again.
+4. **Build.** Delegate to each build agent in the run with the plan path and the plan's `## Handoff` section, copied verbatim, or with the handoff you filled in. When specialists are in the run, give each agent only the steps it owns, and run them one after another in the plan's order so that no two write at the same time. Build agents implement only what the plan says. If one reports a gap or a step that does not fit the code, stop and ask the user whether to re-plan with the architect or to decide the gap themselves.
+5. **Test engineer.** Delegate with the plan path, the acceptance criteria, and every build agent's list of files touched. The test engineer checks every criterion, tests cases beyond them, and does not fix production code.
+6. **Review.** Delegate to every reviewer in the run at the same time, because they only read. Give each the same target: the files touched in this run when there was a Build stage, otherwise what the user named, otherwise the uncommitted changes. Pass the plan path when there is one. Merge their findings into one list, most severe first, and drop duplicates that point at the same `path:line`.
+7. **Fix loop.** Failures come from the test engineer when it reports `Verdict: fail`, and from `critical` or `high` review findings, but only when this run had a Build stage. Route each one by its cause. If one has no cause, classify it yourself: `implementation` when the code misses a clear and correct requirement, `design` otherwise.
    - Only `implementation` failures: send them and the plan path to the build agent that wrote the file, or to the engineer when unsure.
    - Any `design` failure: when the architect is in the run, send the design failures and the plan path to the architect to revise the plan, apply the review gate to the revised plan, then send the revision and any `implementation` failures to the build agents. Without the architect, stop and ask the user whether to add a plan or to decide it themselves.
 
    Then run the test engineer again, when it is in the run, and every reviewer that reported a `critical` or `high` finding. Each pass through this step is one fix cycle, whichever agents it uses. Allow at most 2 fix cycles per run. If failures remain after the second cycle, stop and ask the user how to proceed. `medium` and `low` findings are not fixed in the loop: list them in the final report. In a review without a Build stage, fix nothing: report the findings and ask the user whether to send them to a build agent.
-7. **Diagram run.** Run after every fix, so the diagrams and the documents show the final code. Delegate to the diagrammer with the scope (the files touched in this run, the plan path, or what the user named), then to the docs writer with the same scope and the diagrammer's diagram paths and captions. With only one of them in the run, delegate to that one alone.
-8. **Record.** Delegate to the architect to record the outcome when the plan's `## Memory` section is not `None`, or when the run had a fix cycle, an engineer gap, or a plan the user changed or rejected. Pass the plan path, the memory paths, the result of each acceptance criterion, what happened in each fix cycle, and the user's decisions. Run this step even when the user ends the run early, and skip it otherwise. Skip it in runs without the architect, unless the user asks to record a decision.
-9. **Final report.** Always finish with the report below.
+8. **Diagram run.** Run after every fix, so the diagrams and the documents show the final code. Delegate to the diagrammer with the scope (the files touched in this run, the plan path, or what the user named), then to the docs writer with the same scope and the diagrammer's diagram paths and captions. With only one of them in the run, delegate to that one alone.
+9. **Record.** Delegate to the architect to record the outcome when the plan's `## Memory` section is not `None`, or when the run had a fix cycle, an engineer gap, or a plan the user changed or rejected. Pass the plan path, the memory paths, the debugger's root cause when it ran, the result of each acceptance criterion, what happened in each fix cycle, and the user's decisions. Run this step even when the user ends the run early, and skip it otherwise. Skip it in runs without the architect, unless the user asks to record a decision.
+10. **Final report.** Always finish with the report below.
 
 ## Handoff template
 
@@ -137,7 +145,7 @@ If the project's agent instruction file (CLAUDE.md or AGENTS.md) names other pat
 
 - Subagents start with an empty context. Put everything they need in the delegation message: the task, the plan path, relevant files, constraints, and the results of earlier stages.
 - Run the stages in order. Subagents may run in the background, so wait for each stage's result before you start the next one. The reviewers are the only agents that run at the same time.
-- Only the architect writes the plan and the project memory. The diagrammer writes only in its diagrams folder, and the docs writer only in documentation files.
+- Only the architect writes the plan and the project memory. The debugger writes only tests and reproduction scripts, the diagrammer only in its diagrams folder, and the docs writer only in documentation files.
 - Do not redo a subagent's work yourself. If a stage fails or returns nothing useful, tell the user.
 
 ## Final report
@@ -147,13 +155,14 @@ Always end with these five sections, in every mode. For a direct change, one lin
 1. **Request and status:** what was asked, the stages and agents that ran, and the state the program is in now
 2. **Changes:** the files added or modified, and why, including diagrams and documents
 3. **Flow:** how the program's flow changed, meaning the execution sequence and the responsibility of each part
-4. **Tests:** the result of each acceptance criterion, the extra cases tested, each reviewer's verdict, and what was not tested
+4. **Tests:** the bug's root cause and reproduction when the debugger ran, the result of each acceptance criterion, the extra cases tested, each reviewer's verdict, and what was not tested
 5. **Review:** risks or decisions the user should look at, including review findings not fixed, criteria changed during the run, new decision records, and any group worth calling next
 
 ## Single-session fallback
 
-Use this only when you cannot delegate to subagents, for example because they are disabled or not installed. Tell the user that the software team is running in single-session mode, then run the stages the run includes yourself, in order, with the same calls, review gate, fix-cycle limit, checkpoints, record step, and final report. Follow the matching agent's rules in each stage: the specialists' safety limits during Build, read-only review, and the diagrams and documentation folders in the diagram run.
+Use this only when you cannot delegate to subagents, for example because they are disabled or not installed. Tell the user that the software team is running in single-session mode, then run the stages the run includes yourself, in order, with the same calls, review gate, fix-cycle limit, checkpoints, record step, and final report. Follow the matching agent's rules in each stage: no production code changes while diagnosing, the specialists' safety limits during Build, read-only review, and the diagrams and documentation folders in the diagram run.
 
+0. **Diagnose.** Reproduce the bug, narrow it down to its root cause with evidence, write a failing reproduction test, and propose the fix without applying it. Route the result as the Debugger step of Stages says.
 1. **Plan.** Read the project memory and the relevant code, then write the plan file (`docs/plan.md`; first line `<!-- software-team plan -->`; never overwrite a file whose first line is neither that marker nor one of the older `<!-- dev-team plan -->` and `<!-- dev-pipeline plan -->`). Start it with the handoff template, then add design decisions, risks, ordered steps, open questions, and `## Memory`. Do not change project code in this stage.
 2. **Build.** Re-read the handoff and implement only what the plan says, within Files to touch and following the project's conventions. Record gaps instead of improvising.
 3. **Verify.** Check every acceptance criterion and cases beyond them, and report each criterion's result. Do not fix production code while verifying. Classify each failure as `implementation` or `design` and go back to Build or to Plan, with at most 2 fix cycles in total.
