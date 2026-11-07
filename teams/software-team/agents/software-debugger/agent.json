@@ -1,0 +1,7 @@
+{
+  "name": "software-debugger",
+  "description": "Reproduces a bug, isolates it, and finds its root cause with evidence, then writes a failing reproduction test and reports the cause, the location, and a proposed fix classified as an implementation or design problem. Use when the user reports a bug, an error, a stack trace, or behavior that differs from what is expected, before anyone changes the code. Never fixes production code.",
+  "capabilities": ["read", "edit", "write", "shell"],
+  "model": "deep",
+  "effort": "high"
+}
