@@ -1,0 +1,7 @@
+{
+  "name": "product-discovery",
+  "description": "Investigates the problem behind a product idea: who has it, how they solve it today, what competitors and alternatives exist, and what evidence supports or contradicts it, keeping evidence apart from assumptions. Writes brief.md. Use at the start of a product run, before any scope is decided.",
+  "capabilities": ["read", "write", "web"],
+  "model": "deep",
+  "effort": "high"
+}

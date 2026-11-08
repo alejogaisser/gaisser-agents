@@ -1,0 +1,6 @@
+{
+  "name": "product-team",
+  "description": "Calls the product team: takes a rough product idea to a closed plan ready to build. A short intake, then the discovery, spec, UX, and reviewer subagents produce an evidence-backed brief, a scoped MVP with success metrics and testable acceptance criteria, user flows with a clickable prototype, and a review that closes every gap, with an approval gate after the problem, the scope, and the design, and at most 2 fix cycles. Ends with a handoff for the software team. Use when the user calls the product team or asks, in any language, to plan, scope, validate, or spec an idea, a product, or a feature, for a PRD or an MVP, or for a single role such as \"discovery only\" or \"just review the spec\".",
+  "argumentHint": "[idea] [without checkpoints]",
+  "agents": ["product-discovery", "product-spec", "product-ux", "product-reviewer"]
+}

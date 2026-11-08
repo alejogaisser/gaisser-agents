@@ -27,6 +27,8 @@ ON_CALL_AGENTS = ("software-debugger", "software-diagrammer", "software-docs-wri
                   "software-db-engineer")
 AGENTS = CORE_AGENTS + ON_CALL_AGENTS
 CONTENT_AGENTS = ("content-brand", "content-scout", "content-writer", "content-designer", "content-qa")
+PRODUCT_AGENTS = ("product-discovery", "product-spec", "product-ux", "product-reviewer")
+PRODUCT_FILES = ("assets/product.md",)
 CONTENT_FILES = (
     "assets/profile.md", "assets/visual-system.md", "assets/media-policy.md",
     "assets/publishing-policy.md", "assets/tool-preferences.md",
@@ -108,13 +110,16 @@ class OutputsTest(unittest.TestCase):
             "dist/codex-plugin/gaisser-agents/plugin.json",
             "dist/codex-plugin/gaisser-agents/skills/software-team/SKILL.md",
         }
-        for a in AGENTS + CONTENT_AGENTS:
+        for a in AGENTS + CONTENT_AGENTS + PRODUCT_AGENTS:
             expected.add("dist/claude-code/gaisser-agents/agents/%s.md" % a)
             expected.add("dist/codex/gaisser-agents/agents/%s.toml" % a)
         for tool in ("claude-code", "codex", "codex-plugin"):
             expected.add("dist/%s/gaisser-agents/skills/content-team/SKILL.md" % tool)
             for f in CONTENT_FILES:
                 expected.add("dist/%s/gaisser-agents/skills/content-team/%s" % (tool, f))
+            expected.add("dist/%s/gaisser-agents/skills/product-team/SKILL.md" % tool)
+            for f in PRODUCT_FILES:
+                expected.add("dist/%s/gaisser-agents/skills/product-team/%s" % (tool, f))
         self.assertEqual(set(self.outputs), expected)
 
     def test_architect_claude_matches_plan_8_3(self):
@@ -422,7 +427,7 @@ class SyncTest(TempRepoCase):
         self.assertEqual(self.run_check(), 1)
 
     def test_modified_codex_plugin_file(self):
-        self.edit_text("dist/codex-plugin/gaisser-agents/plugin.json", lambda t: t.replace("4.3.0", "9.9.9"))
+        self.edit_text("dist/codex-plugin/gaisser-agents/plugin.json", lambda t: t.replace("4.4.0", "9.9.9"))
         self.assertTrue(has_error(self.check_findings(), "out of date"))
 
     def test_modified_codex_marketplace(self):
@@ -484,7 +489,7 @@ class VersionBumpTest(TempRepoCase):
         self.assertTrue(has_error(f, "plugin.version was not bumped", "catalog.json"), f)
 
     def test_change_with_bump_passes(self):
-        self.edit_json("catalog.json", lambda d: d["plugin"].update(version="4.3.1"))
+        self.edit_json("catalog.json", lambda d: d["plugin"].update(version="4.4.1"))
         self.change_prompt_and_build()
         self.assertEqual(errors_of(build.check_version_bumps(self.root, "HEAD~1")), [])
 
@@ -653,7 +658,7 @@ class InstallBase(unittest.TestCase):
         # rerun -> unchanged
         code, out, err = self.run_install("claude", "install")
         self.assertEqual(code, 0, out + err)
-        self.assertEqual(out.count("[unchanged]"), 18, out)
+        self.assertEqual(out.count("[unchanged]"), 23, out)
         self.assertNotIn("[installed]", out)
         # edit -> skipped, then force -> overwritten + backup
         target = base / ".claude/agents/software-engineer.md"
@@ -686,7 +691,7 @@ class InstallBase(unittest.TestCase):
     def agents_only_cases(self):
         code, out, err = self.run_install("codex", "agents-only")
         self.assertEqual(code, 0, out + err)
-        self.assertEqual(len(list((self.base / ".codex/agents").glob("*.toml"))), 16)
+        self.assertEqual(len(list((self.base / ".codex/agents").glob("*.toml"))), 20)
         self.assertFalse((self.base / ".agents").exists(), self.files(self.base))
         self.assertNotIn("skills/", out)
         # agents-only has no effect on the claude target
@@ -709,8 +714,8 @@ class InstallBase(unittest.TestCase):
     def list_cases(self):
         code, out, err = self.run_install("all", "list")
         self.assertEqual(code, 0, out + err)
-        self.assertRegex(out, r"\[claude\] gaisser-agents\s+agents: content-brand, content-designer, content-qa, content-scout, content-writer, software-architect, software-code-reviewer, software-db-engineer, software-debugger, software-devops, software-diagrammer, software-docs-writer, software-engineer, software-performance-reviewer, software-security-reviewer, software-test-engineer\s+skills: content-team, software-team")
-        self.assertRegex(out, r"\[codex\] gaisser-agents\s+agents: content-brand, content-designer, content-qa, content-scout, content-writer, software-architect, software-code-reviewer, software-db-engineer, software-debugger, software-devops, software-diagrammer, software-docs-writer, software-engineer, software-performance-reviewer, software-security-reviewer, software-test-engineer\s+skills: content-team, software-team")
+        self.assertRegex(out, r"\[claude\] gaisser-agents\s+agents: content-brand, content-designer, content-qa, content-scout, content-writer, product-discovery, product-reviewer, product-spec, product-ux, software-architect, software-code-reviewer, software-db-engineer, software-debugger, software-devops, software-diagrammer, software-docs-writer, software-engineer, software-performance-reviewer, software-security-reviewer, software-test-engineer\s+skills: content-team, product-team, software-team")
+        self.assertRegex(out, r"\[codex\] gaisser-agents\s+agents: content-brand, content-designer, content-qa, content-scout, content-writer, product-discovery, product-reviewer, product-spec, product-ux, software-architect, software-code-reviewer, software-db-engineer, software-debugger, software-devops, software-diagrammer, software-docs-writer, software-engineer, software-performance-reviewer, software-security-reviewer, software-test-engineer\s+skills: content-team, product-team, software-team")
         self.assertEqual(self.files(self.base), [])
 
 
@@ -771,7 +776,7 @@ class InstallShTest(InstallBase):
                             "--plugin", "gaisser-agents"],
                            capture_output=True, text=True, encoding="utf-8", cwd=str(REPO), env=env)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertEqual(len(list((ch / "agents").glob("*.toml"))), 16, self.files(self._tmp))
+        self.assertEqual(len(list((ch / "agents").glob("*.toml"))), 20, self.files(self._tmp))
         self.assertTrue((home / ".agents/skills/software-team/SKILL.md").is_file(), self.files(self._tmp))
         self.assertFalse((home / ".codex").exists())
 
@@ -921,14 +926,17 @@ class Part1Test(TeamFixture):
             "dist/codex-plugin/gaisser-agents/plugin.json",
             "dist/codex-plugin/gaisser-agents/skills/software-team/SKILL.md",
         }
-        for a in AGENTS + CONTENT_AGENTS:
+        for a in AGENTS + CONTENT_AGENTS + PRODUCT_AGENTS:
             want.add("dist/claude-code/gaisser-agents/agents/%s.md" % a)
             want.add("dist/codex/gaisser-agents/agents/%s.toml" % a)
         for tool in ("claude-code", "codex", "codex-plugin"):
             want.add("dist/%s/gaisser-agents/skills/content-team/SKILL.md" % tool)
             for f in CONTENT_FILES:
                 want.add("dist/%s/gaisser-agents/skills/content-team/%s" % (tool, f))
-        self.assertEqual(len(want), 7 + 2 * (len(AGENTS) + len(CONTENT_AGENTS)) + 3 * 13)
+            want.add("dist/%s/gaisser-agents/skills/product-team/SKILL.md" % tool)
+            for f in PRODUCT_FILES:
+                want.add("dist/%s/gaisser-agents/skills/product-team/%s" % (tool, f))
+        self.assertEqual(len(want), 7 + 2 * (len(AGENTS) + len(CONTENT_AGENTS) + len(PRODUCT_AGENTS)) + 3 * 13 + 3 * 2)
         self.assertEqual(set(self.outputs()), want)
 
     def test_t2_marketplaces_and_renames(self):
@@ -1112,6 +1120,7 @@ class Part1Test(TeamFixture):
     def test_t16e_no_team_targets_a_tool_warns(self):
         self.edit_json(DEV + "/team.json", lambda d: d.update(targets=["claude-code"]))
         self.edit_json("teams/content-team/team.json", lambda d: d.update(targets=["claude-code"]))
+        self.edit_json("teams/product-team/team.json", lambda d: d.update(targets=["claude-code"]))
         f = self.validate()
         self.assertTrue(has_warn(f, "no team targets 'codex'"), f)
         self.assertEqual(errors_of(f), [])
@@ -1513,7 +1522,7 @@ class Part2InstallBase:
         inst.write_bytes(orig)
         code, out, err = self.run_install("claude", "--plugin", "gaisser-agents")
         self.assertEqual(code, 0, out + err)
-        self.assertEqual(out.count("[unchanged]"), 20, out)
+        self.assertEqual(out.count("[unchanged]"), 25, out)
         self.assertNotIn("[skipped]", out)
 
     def test_t28b_extra_file_in_installed_skill_is_skipped(self):

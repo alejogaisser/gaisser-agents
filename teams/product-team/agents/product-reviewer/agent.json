@@ -1,0 +1,7 @@
+{
+  "name": "product-reviewer",
+  "description": "Reviews a product plan as a skeptic before it is built: traces every story to acceptance criteria and screens, flags vague criteria, unmeasurable metrics, scope creep, contradictions, and untested assumptions, and returns a closed or open verdict with routed findings. Use after the UX is drafted. Never edits the plan.",
+  "capabilities": ["read", "write"],
+  "model": "deep",
+  "effort": "medium"
+}
