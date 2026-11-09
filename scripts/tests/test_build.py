@@ -33,6 +33,9 @@ GAME_AGENTS = ("game-designer", "game-programmer", "game-technical-artist", "gam
 GAME_ENGINES = ("unity", "unreal", "godot", "roblox", "web", "generic")
 GAME_FILES = tuple("references/engine-%s.md" % e for e in GAME_ENGINES) + (
     "references/playtest-checks.md", "assets/game.md")
+PTB = "product-to-build"
+STC = "ship-to-content"
+STC_FILES = ("references/redaction-checks.md",)
 CONTENT_FILES = (
     "assets/profile.md", "assets/visual-system.md", "assets/media-policy.md",
     "assets/publishing-policy.md", "assets/tool-preferences.md",
@@ -127,6 +130,10 @@ class OutputsTest(unittest.TestCase):
             expected.add("dist/%s/gaisser-agents/skills/game-team/SKILL.md" % tool)
             for f in GAME_FILES:
                 expected.add("dist/%s/gaisser-agents/skills/game-team/%s" % (tool, f))
+            expected.add("dist/%s/gaisser-agents/skills/%s/SKILL.md" % (tool, PTB))
+            expected.add("dist/%s/gaisser-agents/skills/%s/SKILL.md" % (tool, STC))
+            for f in STC_FILES:
+                expected.add("dist/%s/gaisser-agents/skills/%s/%s" % (tool, STC, f))
         self.assertEqual(set(self.outputs), expected)
 
     def test_architect_claude_matches_plan_8_3(self):
@@ -434,7 +441,7 @@ class SyncTest(TempRepoCase):
         self.assertEqual(self.run_check(), 1)
 
     def test_modified_codex_plugin_file(self):
-        self.edit_text("dist/codex-plugin/gaisser-agents/plugin.json", lambda t: t.replace("4.5.0", "9.9.9"))
+        self.edit_text("dist/codex-plugin/gaisser-agents/plugin.json", lambda t: t.replace("4.6.0", "9.9.9"))
         self.assertTrue(has_error(self.check_findings(), "out of date"))
 
     def test_modified_codex_marketplace(self):
@@ -496,7 +503,7 @@ class VersionBumpTest(TempRepoCase):
         self.assertTrue(has_error(f, "plugin.version was not bumped", "catalog.json"), f)
 
     def test_change_with_bump_passes(self):
-        self.edit_json("catalog.json", lambda d: d["plugin"].update(version="4.5.1"))
+        self.edit_json("catalog.json", lambda d: d["plugin"].update(version="4.6.1"))
         self.change_prompt_and_build()
         self.assertEqual(errors_of(build.check_version_bumps(self.root, "HEAD~1")), [])
 
@@ -665,7 +672,7 @@ class InstallBase(unittest.TestCase):
         # rerun -> unchanged
         code, out, err = self.run_install("claude", "install")
         self.assertEqual(code, 0, out + err)
-        self.assertEqual(out.count("[unchanged]"), 29, out)
+        self.assertEqual(out.count("[unchanged]"), 31, out)
         self.assertNotIn("[installed]", out)
         # edit -> skipped, then force -> overwritten + backup
         target = base / ".claude/agents/software-engineer.md"
@@ -721,8 +728,8 @@ class InstallBase(unittest.TestCase):
     def list_cases(self):
         code, out, err = self.run_install("all", "list")
         self.assertEqual(code, 0, out + err)
-        self.assertRegex(out, r"\[claude\] gaisser-agents\s+agents: content-brand, content-designer, content-qa, content-scout, content-writer, game-designer, game-network-engineer, game-programmer, game-qa, game-technical-artist, product-discovery, product-reviewer, product-spec, product-ux, software-architect, software-code-reviewer, software-db-engineer, software-debugger, software-devops, software-diagrammer, software-docs-writer, software-engineer, software-performance-reviewer, software-security-reviewer, software-test-engineer\s+skills: content-team, game-team, product-team, software-team")
-        self.assertRegex(out, r"\[codex\] gaisser-agents\s+agents: content-brand, content-designer, content-qa, content-scout, content-writer, game-designer, game-network-engineer, game-programmer, game-qa, game-technical-artist, product-discovery, product-reviewer, product-spec, product-ux, software-architect, software-code-reviewer, software-db-engineer, software-debugger, software-devops, software-diagrammer, software-docs-writer, software-engineer, software-performance-reviewer, software-security-reviewer, software-test-engineer\s+skills: content-team, game-team, product-team, software-team")
+        self.assertRegex(out, r"\[claude\] gaisser-agents\s+agents: content-brand, content-designer, content-qa, content-scout, content-writer, game-designer, game-network-engineer, game-programmer, game-qa, game-technical-artist, product-discovery, product-reviewer, product-spec, product-ux, software-architect, software-code-reviewer, software-db-engineer, software-debugger, software-devops, software-diagrammer, software-docs-writer, software-engineer, software-performance-reviewer, software-security-reviewer, software-test-engineer\s+skills: content-team, game-team, product-team, product-to-build, ship-to-content, software-team")
+        self.assertRegex(out, r"\[codex\] gaisser-agents\s+agents: content-brand, content-designer, content-qa, content-scout, content-writer, game-designer, game-network-engineer, game-programmer, game-qa, game-technical-artist, product-discovery, product-reviewer, product-spec, product-ux, software-architect, software-code-reviewer, software-db-engineer, software-debugger, software-devops, software-diagrammer, software-docs-writer, software-engineer, software-performance-reviewer, software-security-reviewer, software-test-engineer\s+skills: content-team, game-team, product-team, product-to-build, ship-to-content, software-team")
         self.assertEqual(self.files(self.base), [])
 
 
@@ -946,7 +953,11 @@ class Part1Test(TeamFixture):
             want.add("dist/%s/gaisser-agents/skills/game-team/SKILL.md" % tool)
             for f in GAME_FILES:
                 want.add("dist/%s/gaisser-agents/skills/game-team/%s" % (tool, f))
-        self.assertEqual(len(want), 7 + 2 * (len(AGENTS) + len(CONTENT_AGENTS) + len(PRODUCT_AGENTS) + len(GAME_AGENTS)) + 3 * 13 + 3 * 2 + 3 * (1 + len(GAME_FILES)))
+            want.add("dist/%s/gaisser-agents/skills/%s/SKILL.md" % (tool, PTB))
+            want.add("dist/%s/gaisser-agents/skills/%s/SKILL.md" % (tool, STC))
+            for f in STC_FILES:
+                want.add("dist/%s/gaisser-agents/skills/%s/%s" % (tool, STC, f))
+        self.assertEqual(len(want), 7 + 2 * (len(AGENTS) + len(CONTENT_AGENTS) + len(PRODUCT_AGENTS) + len(GAME_AGENTS)) + 3 * 13 + 3 * 2 + 3 * (1 + len(GAME_FILES)) + 3 * (2 + len(STC_FILES)))
         self.assertEqual(set(self.outputs()), want)
 
     def test_t2_marketplaces_and_renames(self):
@@ -1533,7 +1544,7 @@ class Part2InstallBase:
         inst.write_bytes(orig)
         code, out, err = self.run_install("claude", "--plugin", "gaisser-agents")
         self.assertEqual(code, 0, out + err)
-        self.assertEqual(out.count("[unchanged]"), 31, out)
+        self.assertEqual(out.count("[unchanged]"), 33, out)
         self.assertNotIn("[skipped]", out)
 
     def test_t28b_extra_file_in_installed_skill_is_skipped(self):
@@ -1679,6 +1690,155 @@ class GameTeamBuildTest(TempRepoCase):
         self.edit_json("teams/game-team/skills/game-team/skill.json",
                        lambda d: d["agents"].append("software-architect"))
         self.assertTrue(has_error(build.validate(self.root), "does not belong to the same team"))
+
+
+def section(text, heading):
+    """The text of '## heading' up to the next '\n## ' (or the end)."""
+    m = re.search(r"^%s\n(.*?)(?=\n## |\Z)" % re.escape(heading), text, re.S | re.M)
+    assert m, "no '%s' section" % heading
+    return m.group(1)
+
+
+def final_report_items(text):
+    return re.findall(r"^\d+\. ", section(text, "## Final report"), re.M)
+
+
+class BridgeSkillsTest(unittest.TestCase):
+    PTB_DIR = "teams/software-team/skills/product-to-build"
+    STC_DIR = "teams/content-team/skills/ship-to-content"
+
+    @classmethod
+    def setUpClass(cls):
+        catalog, findings = build.load_sources(REPO)
+        assert catalog is not None, findings
+        cls.catalog = catalog
+        cls.outputs = build.render_outputs(catalog)
+
+    def test_outputs_in_every_tree(self):
+        for tool in ("claude-code", "codex", "codex-plugin"):
+            for rel in ("skills/%s/SKILL.md" % PTB, "skills/%s/SKILL.md" % STC,
+                        "skills/%s/references/redaction-checks.md" % STC):
+                key = "dist/%s/gaisser-agents/%s" % (tool, rel)
+                self.assertIn(key, self.outputs)
+                self.assertTrue((REPO / key).is_file(), key)
+        for skill in (PTB, STC):
+            self.assertEqual(
+                read(REPO, "dist/codex-plugin/gaisser-agents/skills/%s/SKILL.md" % skill),
+                read(REPO, "dist/codex/gaisser-agents/skills/%s/SKILL.md" % skill))
+
+    def test_token_rendering(self):
+        base = "dist/%s/gaisser-agents/skills/%s/SKILL.md"
+        ptb_codex = self.outputs[base % ("codex", PTB)]
+        ptb_claude = self.outputs[base % ("claude-code", PTB)]
+        stc_codex = self.outputs[base % ("codex", STC)]
+        for name in ("software_architect", "software_engineer", "software_test_engineer"):
+            self.assertIn("`%s`" % name, ptb_codex)
+        self.assertNotIn("gaisser-agents:", ptb_codex)
+        self.assertIn("`gaisser-agents:software-architect`", ptb_claude)
+        for name in ("content_writer", "content_designer", "content_qa", "content_scout"):
+            self.assertIn("`%s`" % name, stc_codex)
+        for key, text in self.outputs.items():
+            if "/skills/%s/" % PTB in key or "/skills/%s/" % STC in key:
+                self.assertNotIn("{{", text, key)
+
+    def test_descriptions(self):
+        want = {
+            PTB: ("build the MVP", "implement the product plan",
+                  "construí el MVP", "implementá el plan de producto"),
+            STC: ("turn this PR into a post", "build in public",
+                  "convertí este PR en un post", "contenido de lo que lancé"),
+        }
+        for name, phrases in want.items():
+            desc = self.catalog["_skills"][name]["meta"]["description"]
+            self.assertTrue(40 <= len(desc) <= 1024, name)
+            for phrase in phrases:
+                self.assertIn(phrase, desc, name)
+
+    def test_docs(self):
+        readme = read(REPO, "README.md")
+        for name in (PTB, STC):
+            self.assertGreaterEqual(readme.count("`%s`" % name), 4, name)
+        self.assertIn("bridge skill", read(REPO, "CONTRIBUTING.md"))
+
+
+class ProductToBuildTest(unittest.TestCase):
+    INSTR = "teams/software-team/skills/product-to-build/instructions.md"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = read(REPO, cls.INSTR)
+        cls.sw = read(REPO, "teams/software-team/skills/software-team/instructions.md")
+
+    def test_agents_list(self):
+        meta = json.loads(read(REPO, "teams/software-team/skills/product-to-build/skill.json"))
+        self.assertEqual(meta["agents"], list(CORE_AGENTS))
+
+    def test_handoff_template_matches_software_team(self):
+        self.assertEqual(GameTeamTest.handoff_block(self.text), GameTeamTest.handoff_block(self.sw))
+
+    def test_project_memory_matches_software_team(self):
+        self.assertEqual(section(self.text, "## Project memory"), section(self.sw, "## Project memory"))
+
+    def test_contract(self):
+        for needle in ("<!-- product-team spec -->", "## Verdict", "closed", "stale", "Approval gate",
+                       "at most 2 fix cycles per slice", "Uncovered", "## Final report",
+                       "## Single-session fallback"):
+            self.assertIn(needle, self.text)
+        self.assertEqual(len(final_report_items(self.text)), 5)
+
+    def test_product_team_points_to_bridge(self):
+        text = read(REPO, "teams/product-team/skills/product-team/instructions.md")
+        self.assertIn("product-to-build", text)
+
+
+class ShipToContentTest(TempRepoCase):
+    SKILL = "teams/content-team/skills/ship-to-content"
+    CT_SKILL = "teams/content-team/skills/content-team"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.text = read(REPO, cls.SKILL + "/instructions.md")
+        cls.ct = read(REPO, cls.CT_SKILL + "/instructions.md")
+
+    def test_sibling_paths_exist(self):
+        paths = set(re.findall(r"\.\./content-team/((?:assets|references)/[a-z0-9-]+\.md)", self.text))
+        self.assertTrue(paths)
+        for rel in paths:
+            self.assertTrue((REPO / self.CT_SKILL / rel).is_file(), rel)
+            for tool in ("claude-code", "codex", "codex-plugin"):
+                self.assertTrue((REPO / ("dist/%s/gaisser-agents/skills/content-team/" % tool + rel)).is_file(),
+                                (tool, rel))
+        for heading in re.findall(r"`(## [^`]+)`", section(self.text, "## Reused from the content team")):
+            self.assertIn("\n" + heading + "\n", self.ct, heading)
+
+    def test_contract(self):
+        for needle in ("Ship gate", "Leak scan", "never written to the run folder", "gh pr view",
+                       "git log", "publishing policy", "drafts only", "at most 2 fix cycles",
+                       "## Final report", "## Single-session fallback"):
+            self.assertIn(needle, self.text)
+        self.assertEqual(len(final_report_items(self.text)), 5)
+        red = read(REPO, self.SKILL + "/references/redaction-checks.md")
+        heads = re.findall(r"^### (R\d)\. ", red, re.M)
+        self.assertEqual(heads, ["R%d" % i for i in range(1, 9)])
+        self.assertIn("\n## Leak scan\n", red)
+
+    def test_cross_team_agent_fails(self):
+        self.edit_json(self.SKILL + "/skill.json", lambda d: d["agents"].append("software-architect"))
+        self.assertTrue(has_error(build.validate(self.root), "does not belong to the same team"))
+
+    def test_content_prompts_accept_ship(self):
+        for name in ("content-writer", "content-qa"):
+            text = read(REPO, "teams/content-team/agents/%s/prompt.md" % name)
+            self.assertIn("ship.md", text)
+            for sentence in re.split(r"(?<=[.])\s+", text):
+                if "ship.md" in sentence:
+                    sentence = re.sub(r"^[-\d. ]+", "", sentence.strip())
+                    self.assertRegex(sentence, r"^(When|If) the run has `ship\.md`", name)
+        scout = read(REPO, "teams/content-team/skills/content-team/references/scout-research.md")
+        self.assertIn("\n## Light pass\n", scout)
+        for minimum in ("At least 12 dated sources", "At least 3 rounds of searching",
+                        "At least 8 visual references"):
+            self.assertIn(minimum, scout)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,6 @@
+{
+  "name": "product-to-build",
+  "description": "Builds a closed product plan with the software team: reads a product-team run folder, splits the MVP into ordered slices with one handoff each that keeps the spec's acceptance criteria IDs, waits for approval at an approval gate, then runs the architect, engineer, and test engineer slice by slice with at most 2 fix cycles per slice, and ends with a coverage report per spec criterion. Use when the user asks, in any language, to \"build the MVP\", \"implement the product plan\", \"construí el MVP\", \"implementá el plan de producto\", or to build slice by slice from docs/product/<slug>/.",
+  "argumentHint": "[product run folder] [with checkpoints | slices only | slice S<n>]",
+  "agents": ["software-architect", "software-engineer", "software-test-engineer"]
+}

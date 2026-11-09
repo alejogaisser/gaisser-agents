@@ -15,6 +15,15 @@ Agent teams for Claude Code, Codex, and more. Call a team by domain: each team h
 
 The main conversation runs the team's skill and is the only one that talks to you. The subagents never talk to you and never delegate to each other.
 
+### Bridge skills
+
+A bridge skill connects two teams: it reads one team's files and runs the other team's agents. Each lives in the team whose agents it runs.
+
+| Skill | Team | Call it | What it does |
+|---|---|---|---|
+| `product-to-build` | `software-team` | `/gaisser-agents:product-to-build docs/product/<slug>/` (Claude Code), `$gaisser-agents:product-to-build` (Codex plugin) or `$product-to-build` (Codex manual install) | Takes a closed product-team run folder, splits the MVP into ordered slices with one handoff each, waits for your approval, then builds slice by slice with the architect, engineer, and test engineer, with at most 2 fix cycles per slice and a coverage report per acceptance criterion |
+| `ship-to-content` | `content-team` | `/gaisser-agents:ship-to-content <PR, tag, range, or changelog>` (Claude Code), `$gaisser-agents:ship-to-content` (Codex plugin) or `$ship-to-content` (Codex manual install) | Turns a merged PR, tag, commit range, or changelog into reviewed build-in-public drafts: read-only extraction, a redaction step you approve at a ship gate, a light scout, copy, design, QA, and a leak scan. Drafts only, it never posts |
+
 Next: `finance-team`.
 
 Authors edit tool-neutral sources (`catalog.json` and `teams/<team>/`); `scripts/build.py` validates them and generates the per-tool files under `dist/`, plus the marketplace manifests for both tools.
@@ -58,7 +67,7 @@ install does not auto-update: rebuild, then re-add or update the marketplace to 
 
 Codex plugins can carry skills but not custom agents, so Codex needs two steps: the plugin for the skills, and the install script for the subagents of every team.
 
-1. Add the marketplace and install the plugin (the `software-team`, `content-team`, `product-team`, and `game-team` skills, and the skill of every team added later):
+1. Add the marketplace and install the plugin (the `software-team`, `content-team`, `product-team`, and `game-team` skills, the `product-to-build` and `ship-to-content` bridge skills, and the skill of every team added later):
 
    ```
    codex plugin marketplace add alejogaisser/gaisser-agents
@@ -90,7 +99,7 @@ $gaisser-agents:software-team add rate limiting to the API with checkpoints
 $software-team add rate limiting to the API with checkpoints
 ```
 
-The same forms work for every team: replace `software-team` with `content-team` and the task with a content brief, with `product-team` and the task with an idea to plan, or with `game-team` and the task with a game to make, for example `/game-team make a 2D platformer prototype in Godot`. The first form is the full plugin-scoped name. The short `/software-team` works while no other skill claims that name. Codex prefixes a skill that comes from a plugin, so the plugin install is `$gaisser-agents:software-team` and the manual install, which copies a loose skill file, is `$software-team`.
+The same forms work for every team: replace `software-team` with `content-team` and the task with a content brief, with `product-team` and the task with an idea to plan, or with `game-team` and the task with a game to make, for example `/game-team make a 2D platformer prototype in Godot`. For a bridge skill, use its own name: `/product-to-build docs/product/<slug>/` builds a closed product plan, and `/ship-to-content` with a PR turns it into a post. The first form is the full plugin-scoped name. The short `/software-team` works while no other skill claims that name. Codex prefixes a skill that comes from a plugin, so the plugin install is `$gaisser-agents:software-team` and the manual install, which copies a loose skill file, is `$software-team`.
 
 Router tip for your CLAUDE.md or AGENTS.md:
 
@@ -99,6 +108,8 @@ For non-trivial code changes, use the software-team skill (/software-team in Cla
 For content pieces (carousels, posts, scripts), use the content-team skill (/content-team in Claude Code, $gaisser-agents:content-team in Codex).
 To turn an idea into a closed product plan before building, use the product-team skill (/product-team in Claude Code, $gaisser-agents:product-team in Codex).
 For games in any engine (Unity, Unreal, Godot, Roblox, web), use the game-team skill (/game-team in Claude Code, $gaisser-agents:game-team in Codex).
+To build a closed product plan slice by slice, use the product-to-build skill (/product-to-build in Claude Code, $gaisser-agents:product-to-build in Codex).
+To turn a merged PR or a release into build-in-public content, use the ship-to-content skill (/ship-to-content in Claude Code, $gaisser-agents:ship-to-content in Codex).
 For work on a single role, name the scoped agent, for example gaisser-agents:software-architect.
 Small changes (typos, one-line fixes) are made directly, without delegating.
 ```
@@ -179,7 +190,7 @@ Existing plans that carry the old marker are still overwritten.
 
 `Shell` is Bash plus PowerShell; `Web` is WebFetch plus WebSearch.
 
-Skill: `/gaisser-agents:software-team` (short form `/software-team`) in Claude Code, and `$gaisser-agents:software-team` in Codex with the plugin or `$software-team` with the manual install. One plugin carries every team, so installing it installs all of them.
+Skill: `/gaisser-agents:software-team` (short form `/software-team`) in Claude Code, and `$gaisser-agents:software-team` in Codex with the plugin or `$software-team` with the manual install. One plugin carries every team, so installing it installs all of them. The same team also holds the `product-to-build` bridge skill, which builds a closed product plan with the core flow, slice by slice.
 
 How the software team works:
 
@@ -211,7 +222,7 @@ Core flow: `software-architect -> review gate -> software-engineer -> software-t
 
 Video renders need Node.js 18 or later and ffmpeg on your path; the designer installs GSAP and Playwright into each run's `code/` folder. The designer's guides (`motion-design.md`, `kinetic-typography.md`, `video-pipeline.md`, `visual-fx.md`) and the scout's `scout-research.md` ship in the skill's `references/` folder, and `visual-system.md` has an optional `## 10. Motion` slot for your own motion rules.
 
-Skill: `/gaisser-agents:content-team` (short form `/content-team`) in Claude Code, and `$gaisser-agents:content-team` in Codex with the plugin or `$content-team` with the manual install. The team ships no personal data: your brand facts live in `team-context/content-team/` in your own project (templates ship under the skill's `assets/`), the render path is chosen per format, and the team produces drafts only until you approve an outward action.
+Skill: `/gaisser-agents:content-team` (short form `/content-team`) in Claude Code, and `$gaisser-agents:content-team` in Codex with the plugin or `$content-team` with the manual install. The team ships no personal data: your brand facts live in `team-context/content-team/` in your own project (templates ship under the skill's `assets/`), the render path is chosen per format, and the team produces drafts only until you approve an outward action. The team also holds the `ship-to-content` bridge skill, which turns shipped work into drafts with a redaction step before anything reaches the agents.
 
 ### product-team
 
@@ -222,7 +233,7 @@ Skill: `/gaisser-agents:content-team` (short form `/content-team`) in Claude Cod
 | `product-ux` | Designs flows, screens, states, microcopy, and accessibility notes, and builds a self-contained clickable `ux/prototype.html` | sonnet, effort high; Read, Grep, Glob, Edit, Write | effort high, workspace-write |
 | `product-reviewer` | Reviews the whole plan as a skeptic, traces every story to criteria and screens, and returns a `closed` or `open` verdict with findings routed to discovery, spec, UX, or you; never edits the plan | opus, effort medium; Read, Grep, Glob, Write | effort medium, workspace-write |
 
-Skill: `/gaisser-agents:product-team` (short form `/product-team`) in Claude Code, and `$gaisser-agents:product-team` in Codex with the plugin or `$product-team` with the manual install. A run asks up to 5 intake questions, writes everything to `docs/product/<slug>/`, stops for your approval after the problem, the MVP scope, and the design, and allows at most 2 fix cycles after the review. The team plans and never builds: the final report hands `spec.md` to the software team. An optional `team-context/product-team/product.md` (template under the skill's `assets/`) gives every run your product's context.
+Skill: `/gaisser-agents:product-team` (short form `/product-team`) in Claude Code, and `$gaisser-agents:product-team` in Codex with the plugin or `$product-team` with the manual install. A run asks up to 5 intake questions, writes everything to `docs/product/<slug>/`, stops for your approval after the problem, the MVP scope, and the design, and allows at most 2 fix cycles after the review. The team plans and never builds: the final report hands the run folder to the `product-to-build` bridge skill, which slices the MVP and builds it with the software team. An optional `team-context/product-team/product.md` (template under the skill's `assets/`) gives every run your product's context.
 
 Model choice follows Anthropic's model guide: the stages where judgment matters most (finding the real problem, cutting scope, and reviewing) run on Opus, and the prototype, which is mostly code and copy generation, runs on Sonnet. The reviewer runs at effort medium, Opus 5.5's default, because it reads a short, finished plan instead of researching.
 
@@ -264,7 +275,7 @@ Model choice follows Anthropic's model guide: the designer runs on Opus because 
 | `-n`, `--dry-run` | `-DryRun` | Show what would happen |
 
 - Existing files are skipped unless you pass force. With force, the old copy moves to `agent-catalog-backups/<timestamp>/` under `.claude/` or the Codex home.
-- Claude manual installs are not namespaced: use `software-architect`, not `gaisser-agents:software-architect`; the skills are `/software-team`, `/content-team`, `/product-team`, and `/game-team`.
+- Claude manual installs are not namespaced: use `software-architect`, not `gaisser-agents:software-architect`; the skills are `/software-team`, `/content-team`, `/product-team`, `/game-team`, `/product-to-build`, and `/ship-to-content`. The bridge skill folders are `product-to-build` and `ship-to-content`.
 - To remove: delete the installed files listed by `--list`.
 
 ## Customize, and name collisions

@@ -1,0 +1,6 @@
+{
+  "name": "ship-to-content",
+  "description": "Turns shipped work into build-in-public content with the content team: reads a merged PR, tag, commit range, or changelog with read-only gh and git commands, redacts secrets, internal details, and private names into a ship.md the user approves at a ship gate, then runs a light scout, writer, designer, and QA to reviewed drafts, with a leak scan before the review gate and drafts only, never posting. Use when the user asks, in any language, to \"turn this PR into a post\", to write about a release or changelog, to \"build in public\", or says \"convertí este PR en un post\" or \"contenido de lo que lancé\".",
+  "argumentHint": "[PR | tag | commit range | changelog] [post | carousel | thread | short video] [with full research]",
+  "agents": ["content-scout", "content-writer", "content-designer", "content-qa"]
+}

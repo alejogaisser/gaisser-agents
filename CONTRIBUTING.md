@@ -29,7 +29,8 @@ Commit sources and regenerated outputs together. CI fails when they are out of s
 - One plugin (`gaisser-agents`) carries every team: each team contributes its agents plus one entry skill named like the team, invoked `/<plugin>:<team>` in Claude Code and `$<team>` in Codex.
 - The main conversation orchestrates: the entry skill runs in the main session, and the subagents never talk to the user or to each other.
 - Team names end in `-team` (for example `software-team`).
-- A team may borrow another team's agents by plain name in its entry skill, because tokens only name the skill's own team; copy any shared contract and add a test that keeps the copies identical.
+- A team may also hold a bridge skill named `<from>-to-<to>` (for example `product-to-build`). It sits in the team whose agents it runs, so its tokens stay validated, and it reads the other team's output as files. It is not an entry skill: the one-entry-skill-per-team rule is unchanged.
+- A team may borrow another team's agents by plain name in any of its skills, because tokens only name the skill's own team; copy any shared contract and add a test that keeps the copies identical.
 
 ## 4. Improve an agent or skill
 
@@ -91,6 +92,7 @@ Add an entry to `renames` in `catalog.json`: the old plugin name maps to the cur
 - Limits: 500 lines, 1024-character description.
 - Skill files: `assets/` and `references/` are flat folders of text files only (`md`, `txt`, `json`, `csv`, `yaml`, `yml`, lowercase kebab-case names), at most 64 KiB each, and are copied verbatim into every generated plugin.
 - Project context files convention: teams never ship personal or brand data (voice, people, palettes, fonts, photos). The entry skill declares them in a `## Project context` section (file, default path, template, required). The default path is `team-context/<team>/<file>.md`, overridable in the project's CLAUDE.md or AGENTS.md. If a required file is missing, the skill copies its template from `assets/`, asks the user to fill it in, and stops; the resolved paths are passed to every subagent. Binary inputs such as fonts stay in the user's project and `.gitignore` excludes font files.
+- A skill may read a sibling skill of the plugin through `../<skill>/` (for example `ship-to-content` reads `../content-team/`), because every install ships all skills as siblings. Add a test that every such path exists.
 - The software-team skill holds the canonical handoff template; the architect prompt repeats its six field names in order, and a test keeps them in sync.
 
 ## 10. Built and planned teams
@@ -99,6 +101,7 @@ Add an entry to `renames` in `catalog.json`: the old plugin name maps to the cur
 - `content-team`: built. Five roles (scout, writer, designer, brand, QA) for social content, on both targets. Local coded rendering is the default path; remote design tools are optional.
 - `product-team`: built. Discovery, spec, UX, and reviewer take an idea to a closed product plan with three approval gates, on both targets. It plans only and hands the spec to `software-team`.
 - `game-team`: built. Designer, programmer, technical artist, QA, and an on-call network engineer for original games in any engine, with per-engine references and the software team's architect borrowed for planning, on both targets.
+- Bridge skills: `product-to-build` (in `software-team`) builds a closed product plan slice by slice, and `ship-to-content` (in `content-team`) turns shipped work into reviewed content drafts.
 - `finance-team`: to be designed with the owner first.
 
 ## 11. Test locally
