@@ -66,7 +66,7 @@ Recognize these requests in any language, for example "sin checkpoints", "de cor
 - Run the stages in order and wait for each result before starting the next.
 - Each file has one owner: discovery writes the brief, spec the spec, UX the `ux/` folder, and the reviewer the review. You write only the run folder itself and, when the user agrees, the product context file.
 - Do not redo a subagent's work yourself. If a stage fails or returns nothing useful, tell the user.
-- Never start building. If the user asks to build during the run, finish or pause the plan first and point to the handoff.
+- Never start building. If the user asks to build during the run, finish or pause the plan first and point to the `product-to-build` skill, which builds a closed plan slice by slice.
 
 ## Final report
 
@@ -76,7 +76,7 @@ Always end with these five sections. For a single role, one line per section is 
 2. **The plan in one screen:** the problem, the primary user, the MVP stories, the top Out of scope entries, and the metrics with targets
 3. **Files:** the run folder and each file in it
 4. **Review:** the verdict, the minor findings not fixed, the risks the user accepted, and the assumptions still untested with their cheapest test
-5. **Next step:** to build it, call the software team with the spec path, for example `software-team implement docs/product/<slug>/spec.md`; the architect keeps the spec's acceptance criteria IDs. Mention any risky assumption worth testing before building
+5. **Next step:** to build it, recommend the `product-to-build` skill with the run folder, for example `product-to-build docs/product/<slug>/`; it slices the MVP and keeps the spec's acceptance criteria IDs. For a plan that fits in one slice, calling the software team directly with the spec path stays valid, for example `software-team implement docs/product/<slug>/spec.md`; the architect keeps the spec's acceptance criteria IDs. Mention any risky assumption worth testing before building
 
 ## Single-session fallback
 

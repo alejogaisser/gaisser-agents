@@ -6,7 +6,7 @@ The QA role records `pass`, `fail`, or `limited` per check, with page, frame, or
 |---|---|---|
 | 1. Text integrity | Spelling and grammar in the profile's language, and every string in the render matching `copy.md` exactly | writer or designer |
 | 2. Clipping and legibility | No overflow, clipped glyph, overlap, or margin violation; contrast at or above the floor in `visual-system.md`, on composited pixels at every page and every checkpoint | designer |
-| 3. Claims | Every factual claim traces to a dated source in `scout.md`; a performance claim about the user's own audience traces to `## Worked for you`, and without that section any such claim is a defect; no invented metric, no guarantee wording | writer |
+| 3. Claims | Every factual claim traces to a dated source in `scout.md` (when the run has `ship.md`, a claim about the user's shipped work may trace to one of its evidence lines); a performance claim about the user's own audience traces to `## Worked for you`, and without that section any such claim is a defect; no invented metric, no guarantee wording | writer |
 | 4. Privacy | No addresses, private handles, message threads, tokens, file paths, notifications, faces without consent, or location in any still or frame | designer |
 | 5. Provenance and policy | Each asset class matches `assets.md`, nothing denied or unresolved appears, no `reference-only` image from `scout-refs/` appears, required labels are present | main session or designer |
 | 6. Technical and prohibitions | Dimensions, page count and order, duration, frame rate, codec, and file size against the target profile, plus each hard prohibition in `visual-system.md` | designer |

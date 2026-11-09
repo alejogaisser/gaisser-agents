@@ -11,6 +11,16 @@ A full run meets all of these minimums. When a minimum cannot be met, say which 
 - At least 8 visual references and at least 3 motion references for any video format.
 - Every claim the writer might use has a source no older than 18 months, unless it is a stable fact, which you mark as such.
 
+## Light pass
+
+Used when `brief.md` says `Scout: light`, for example for a piece about the user's own shipped work. A light pass keeps the writer's need for an angle and hooks, and drops the breadth.
+
+- One round of searching, aimed at the format and the platform.
+- At least 4 dated sources, from at least 2 source types.
+- At least 3 visual references, and at least 1 motion reference for any video format.
+- At least 3 hooks, each with its pattern and an example.
+- `## Working broadly` is still required, and the report says that this was a light pass.
+
 ## Source types
 
 | Type | Where to look | What to take |
