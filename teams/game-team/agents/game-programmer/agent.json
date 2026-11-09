@@ -1,0 +1,7 @@
+{
+  "name": "game-programmer",
+  "description": "Implements a game plan in the detected engine: gameplay and systems code, engine-free logic with unit tests, and editor scripts that generate scenes, prefabs, and levels instead of hand-editing them; compiles headless and reports gaps. Use in the game team's Build stage.",
+  "capabilities": ["read", "edit", "write", "shell", "lsp"],
+  "model": "standard",
+  "effort": "high"
+}

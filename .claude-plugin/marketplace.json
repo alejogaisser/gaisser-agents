@@ -1,6 +1,6 @@
 {
   "name": "gaisser-agents",
-  "description": "Agent teams you call by domain. Every team ships in one plugin, each with its own subagents and one entry skill that runs them. Three teams ship today: a software team (architect, engineer, test engineer), a content team (scout, writer, designer, brand, QA), and a product team (discovery, spec, UX, reviewer).",
+  "description": "Agent teams you call by domain. Every team ships in one plugin, each with its own subagents and one entry skill that runs them. Four teams ship today: a software team (architect, engineer, test engineer), a content team (scout, writer, designer, brand, QA), a product team (discovery, spec, UX, reviewer), and a game team (designer, programmer, technical artist, QA, network engineer).",
   "owner": {
     "name": "Alejo Gaisser",
     "url": "https://github.com/alejogaisser"
@@ -9,7 +9,7 @@
     {
       "name": "gaisser-agents",
       "source": "./dist/claude-code/gaisser-agents",
-      "description": "Agent teams you call by domain, a software team, a content team, and a product team, each with its own subagents plus one entry skill that runs them.",
+      "description": "Agent teams you call by domain, a software team, a content team, a product team, and a game team, each with its own subagents plus one entry skill that runs them.",
       "category": "development",
       "tags": [
         "agents",
@@ -17,7 +17,8 @@
         "orchestration",
         "planning",
         "testing",
-        "product"
+        "product",
+        "games"
       ]
     }
   ],

@@ -1,0 +1,10 @@
+{
+  "name": "game-team",
+  "displayName": "Game Team",
+  "agentPrefix": "game-",
+  "description": "The game team: a designer, a programmer, a technical artist, QA, and a network engineer plus the game-team skill, for designing, building, and verifying original games in Unity, Unreal, Godot, Roblox, web engines, or any other engine, detected from the project.",
+  "category": "development",
+  "keywords": ["team", "games", "game-dev", "unity", "unreal", "godot", "roblox", "game-jam"],
+  "color": "orange",
+  "targets": ["claude-code", "codex"]
+}

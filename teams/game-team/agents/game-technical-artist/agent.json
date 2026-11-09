@@ -1,0 +1,7 @@
+{
+  "name": "game-technical-artist",
+  "description": "Implements the visual side of a game plan through code and editor scripts: shaders, VFX, lighting, UI layout, import settings, and performance budgets; uses provided or free licensed assets only and records every license. Never generates art. Use when a plan assigns visual steps.",
+  "capabilities": ["read", "edit", "write", "shell", "web"],
+  "model": "standard",
+  "effort": "high"
+}

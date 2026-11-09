@@ -1,0 +1,12 @@
+{
+  "name": "game-team",
+  "description": "Calls the game team: designs, plans, builds, and verifies original games in Unity, Unreal, Godot, Roblox (with Rojo), web engines such as Phaser or Three.js, or any other engine. It detects the engine from the project and loads only that engine's reference. A designer writes the GDD with a first-playable cut, the software team's architect plans, a programmer and a technical artist build through code and editor scripts, and QA verifies with headless tests and a playtest checklist. Has a Design gate, a Review gate, and at most 2 fix cycles, and borrows the software team's debugger, reviewers, devops, and diagram run on call. Use when the user calls the game team or asks, in any language, to make, prototype, or change a game, a game jam or hackathon entry, gameplay, shaders, levels, or multiplayer, or for a single role such as \"just the game designer\".",
+  "argumentHint": "[task] [jam] [with checkpoints]",
+  "agents": [
+    "game-designer",
+    "game-programmer",
+    "game-technical-artist",
+    "game-qa",
+    "game-network-engineer"
+  ]
+}

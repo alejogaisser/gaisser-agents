@@ -29,6 +29,7 @@ Commit sources and regenerated outputs together. CI fails when they are out of s
 - One plugin (`gaisser-agents`) carries every team: each team contributes its agents plus one entry skill named like the team, invoked `/<plugin>:<team>` in Claude Code and `$<team>` in Codex.
 - The main conversation orchestrates: the entry skill runs in the main session, and the subagents never talk to the user or to each other.
 - Team names end in `-team` (for example `software-team`).
+- A team may borrow another team's agents by plain name in its entry skill, because tokens only name the skill's own team; copy any shared contract and add a test that keeps the copies identical.
 
 ## 4. Improve an agent or skill
 
@@ -97,6 +98,7 @@ Add an entry to `renames` in `catalog.json`: the old plugin name maps to the cur
 - `software-team`: built. Architect, engineer, and test engineer for code changes, plus groups called on demand (debugger, diagram run, review, devops and database specialists), on both targets.
 - `content-team`: built. Five roles (scout, writer, designer, brand, QA) for social content, on both targets. Local coded rendering is the default path; remote design tools are optional.
 - `product-team`: built. Discovery, spec, UX, and reviewer take an idea to a closed product plan with three approval gates, on both targets. It plans only and hands the spec to `software-team`.
+- `game-team`: built. Designer, programmer, technical artist, QA, and an on-call network engineer for original games in any engine, with per-engine references and the software team's architect borrowed for planning, on both targets.
 - `finance-team`: to be designed with the owner first.
 
 ## 11. Test locally

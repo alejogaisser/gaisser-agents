@@ -1,0 +1,7 @@
+{
+  "name": "game-designer",
+  "description": "Designs original games: writes and revises the game design document with pitch, pillars, core loop, mechanics with tunable numbers, controls, and a scope cut to a first playable, plus playtest questions. Engine-neutral. Use for a new game or a change to mechanics, rules, controls, or scope.",
+  "capabilities": ["read", "edit", "write", "web"],
+  "model": "deep",
+  "effort": "high"
+}
