@@ -11,6 +11,7 @@ Agent teams for Claude Code, Codex, and more. Call a team by domain: each team h
 | `software-team` | `/gaisser-agents:software-team` (Claude Code), `$gaisser-agents:software-team` (Codex plugin) or `$software-team` (Codex manual install) | `software-architect`, `software-engineer`, `software-test-engineer`; on call: `software-debugger`, `software-diagrammer`, `software-docs-writer`, `software-security-reviewer`, `software-code-reviewer`, `software-performance-reviewer`, `software-devops`, `software-db-engineer` | Claude Code, Codex |
 | `content-team` | `/gaisser-agents:content-team` (Claude Code), `$gaisser-agents:content-team` (Codex plugin) or `$content-team` (Codex manual install) | `content-brand`, `content-scout`, `content-writer`, `content-designer`, `content-qa` | Claude Code, Codex |
 | `product-team` | `/gaisser-agents:product-team` (Claude Code), `$gaisser-agents:product-team` (Codex plugin) or `$product-team` (Codex manual install) | `product-discovery`, `product-spec`, `product-ux`, `product-reviewer` | Claude Code, Codex |
+| `game-team` | `/gaisser-agents:game-team` (Claude Code), `$gaisser-agents:game-team` (Codex plugin) or `$game-team` (Codex manual install) | `game-designer`, `game-programmer`, `game-technical-artist`, `game-qa`; on call: `game-network-engineer` | Claude Code, Codex |
 
 The main conversation runs the team's skill and is the only one that talks to you. The subagents never talk to you and never delegate to each other.
 
@@ -57,7 +58,7 @@ install does not auto-update: rebuild, then re-add or update the marketplace to 
 
 Codex plugins can carry skills but not custom agents, so Codex needs two steps: the plugin for the skills, and the install script for the subagents of every team.
 
-1. Add the marketplace and install the plugin (the `software-team`, `content-team`, and `product-team` skills, and the skill of every team added later):
+1. Add the marketplace and install the plugin (the `software-team`, `content-team`, `product-team`, and `game-team` skills, and the skill of every team added later):
 
    ```
    codex plugin marketplace add alejogaisser/gaisser-agents
@@ -89,7 +90,7 @@ $gaisser-agents:software-team add rate limiting to the API with checkpoints
 $software-team add rate limiting to the API with checkpoints
 ```
 
-The same forms work for every team: replace `software-team` with `content-team` and the task with a content brief, or with `product-team` and the task with an idea to plan. The first form is the full plugin-scoped name. The short `/software-team` works while no other skill claims that name. Codex prefixes a skill that comes from a plugin, so the plugin install is `$gaisser-agents:software-team` and the manual install, which copies a loose skill file, is `$software-team`.
+The same forms work for every team: replace `software-team` with `content-team` and the task with a content brief, with `product-team` and the task with an idea to plan, or with `game-team` and the task with a game to make, for example `/game-team make a 2D platformer prototype in Godot`. The first form is the full plugin-scoped name. The short `/software-team` works while no other skill claims that name. Codex prefixes a skill that comes from a plugin, so the plugin install is `$gaisser-agents:software-team` and the manual install, which copies a loose skill file, is `$software-team`.
 
 Router tip for your CLAUDE.md or AGENTS.md:
 
@@ -97,6 +98,7 @@ Router tip for your CLAUDE.md or AGENTS.md:
 For non-trivial code changes, use the software-team skill (/software-team in Claude Code, $gaisser-agents:software-team in Codex).
 For content pieces (carousels, posts, scripts), use the content-team skill (/content-team in Claude Code, $gaisser-agents:content-team in Codex).
 To turn an idea into a closed product plan before building, use the product-team skill (/product-team in Claude Code, $gaisser-agents:product-team in Codex).
+For games in any engine (Unity, Unreal, Godot, Roblox, web), use the game-team skill (/game-team in Claude Code, $gaisser-agents:game-team in Codex).
 For work on a single role, name the scoped agent, for example gaisser-agents:software-architect.
 Small changes (typos, one-line fixes) are made directly, without delegating.
 ```
@@ -224,6 +226,28 @@ Skill: `/gaisser-agents:product-team` (short form `/product-team`) in Claude Cod
 
 Model choice follows Anthropic's model guide: the stages where judgment matters most (finding the real problem, cutting scope, and reviewing) run on Opus, and the prototype, which is mostly code and copy generation, runs on Sonnet. The reviewer runs at effort medium, Opus 5.5's default, because it reads a short, finished plan instead of researching.
 
+### game-team
+
+| Agent | What it does | Claude Code | Codex |
+|---|---|---|---|
+| `game-designer` | Designs original games: writes the GDD with pitch, pillars, core loop, mechanics with tunable numbers, controls, and a scope cut to a first playable, plus playtest questions; never writes code | opus, effort high; Read, Grep, Glob, Edit, Write, Web | effort high, workspace-write |
+| `game-programmer` | Implements the plan in the detected engine: gameplay code, engine-free logic with unit tests, and editor scripts that generate scenes, prefabs, and levels; compiles headless and flags gaps | sonnet, effort high; Read, Grep, Glob, Edit, Write, Shell, LSP | effort high, workspace-write |
+| `game-technical-artist` | Implements shaders, VFX, lighting, UI layout, and import settings through code, within budgets; provided or free licensed assets only, each recorded in `credits.md`; never generates art | sonnet, effort high; Read, Grep, Glob, Edit, Write, Shell, Web | effort high, workspace-write |
+| `game-qa` | Verifies every acceptance criterion with the engine's test tools and headless runs, measures frame time and memory, writes a manual playtest checklist, and classifies failures as implementation or design; does not fix production code | sonnet, effort high; Read, Grep, Glob, Edit, Write, Shell | effort high, workspace-write |
+| `game-network-engineer` | On call: implements the plan's authority model, replication, RPCs or remote events with server-side validation, and lag handling | sonnet, effort high; Read, Grep, Glob, Edit, Write, Shell | effort high, workspace-write |
+
+Skill: `/gaisser-agents:game-team` (short form `/game-team`) in Claude Code, and `$gaisser-agents:game-team` in Codex with the plugin or `$game-team` with the manual install.
+
+- Engine detection: the skill detects Unity, Unreal, Godot, Roblox (with Rojo), web engines, or another engine from the project's files, and passes only that engine's reference (`engine-*.md` under the skill's `references/`) to the agents. The references hold the verified build, test, and editor commands, and anything unverified is labelled.
+- Core flow: `game-designer -> design gate -> software-architect -> review gate -> game-programmer and game-technical-artist -> game-qa -> (at most 2 fix cycles) -> record -> final report`.
+- Borrowed agents: the plan stage uses the software team's `software-architect`; on call the skill also borrows the debugger, the reviewers, `software-devops`, and the diagram run. They are named in plain text, and a test keeps the shared handoff template identical in both skills.
+- Modes: composed run, checkpoints, jam (for a game jam or hackathon: a one-page GDD, a first playable in about a quarter of the time, increments, and a freeze point), single role, and direct.
+- Limits: agents are strong at code, editor scripts, tests, command-line builds, and text formats, and weak at visual editing and art. The team generates scenes and levels from scripts, and puts what only a human can see on a playtest checklist. An engine MCP server is an optional editor bridge, never required.
+- Originality: the team builds original games and never recreates a specific game's name, characters, art, music, levels, or look.
+- Files: the game documents live in `docs/game/` in your project, and an optional `team-context/game-team/game.md` (template under the skill's `assets/`) holds the engine path, budgets, license policy, and jam rules.
+
+Model choice follows Anthropic's model guide: the designer runs on Opus because deciding what is fun and what to cut is the riskiest judgment, and the programmer, technical artist, QA, and network engineer run on Sonnet at effort high, because engine code, shaders, and test runs with long logs are easy to get subtly wrong.
+
 ## Manual install details
 
 `install.sh` (macOS, Linux, Git Bash) and `install.ps1` (Windows PowerShell 5.1 and PowerShell 7) copy files without a plugin manager.
@@ -240,14 +264,14 @@ Model choice follows Anthropic's model guide: the stages where judgment matters 
 | `-n`, `--dry-run` | `-DryRun` | Show what would happen |
 
 - Existing files are skipped unless you pass force. With force, the old copy moves to `agent-catalog-backups/<timestamp>/` under `.claude/` or the Codex home.
-- Claude manual installs are not namespaced: use `software-architect`, not `gaisser-agents:software-architect`; the skills are `/software-team`, `/content-team`, and `/product-team`.
+- Claude manual installs are not namespaced: use `software-architect`, not `gaisser-agents:software-architect`; the skills are `/software-team`, `/content-team`, `/product-team`, and `/game-team`.
 - To remove: delete the installed files listed by `--list`.
 
 ## Customize, and name collisions
 
 - Plugin agents are scoped, for example `gaisser-agents:software-architect`. The skill always uses the scoped names.
 - Your own `~/.claude/agents/software-architect.md` (and so on) wins for the bare name, because user-level agents beat plugin agents. The skill uses the scoped names, so both can coexist. Name the scoped agent when you call one role directly.
-- Agent and skill names are unique across teams, and every team has a required unique agent prefix (`dev-` and `content-` today).
+- Agent and skill names are unique across teams, and every team has a required unique agent prefix (`software-`, `content-`, `product-`, and `game-` today).
 - Copy an agent to `~/.claude/agents/` or `~/.codex/agents/` and edit it. The installers keep your files unless you pass force.
 
 ## Security and permissions

@@ -1,0 +1,7 @@
+{
+  "name": "game-network-engineer",
+  "description": "Multiplayer specialist: implements the plan's authority model, replication, RPCs or remote events with server-side validation, and lag handling in the detected engine, within a handoff. Use when the user calls for multiplayer, netcode, or networking work.",
+  "capabilities": ["read", "edit", "write", "shell"],
+  "model": "standard",
+  "effort": "high"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "game-qa",
+  "description": "Verifies a game change against each acceptance criterion with the engine's test tools and headless runs, measures frame time and memory, writes a manual playtest checklist, and classifies failures as implementation or design; never fixes production code. Use after the game team's Build stage.",
+  "capabilities": ["read", "edit", "write", "shell"],
+  "model": "standard",
+  "effort": "high"
+}
