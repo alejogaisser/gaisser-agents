@@ -13,6 +13,10 @@ One row per format you use. The format list is yours; add or remove rows freely.
 - Backend:
 - Version:
 
+## Optional design skills
+- Skills folder (leave empty to use the default folders):
+- Remotion licence eligibility (only when Remotion is a backend):
+
 ## Allowed remote vendors
 - Vendor:
 - Operations allowed:

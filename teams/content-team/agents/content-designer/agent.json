@@ -1,6 +1,6 @@
 {
   "name": "content-designer",
-  "description": "Art-directs approved copy into a render-path-agnostic composition spec with a full motion timeline, and renders the local path from code: stills, and fully animated video built with GSAP and captured frame by frame. Use after the copy is drafted, or to apply layout or motion fixes reported by QA.",
+  "description": "Art-directs approved copy into a render-path-agnostic composition spec with a full motion timeline, and renders the local path from code: stills, and fully animated video built with GSAP and captured frame by frame, cut on the beat of licensed music. Use after the copy is drafted, or to apply layout or motion fixes reported by QA.",
   "capabilities": ["read", "edit", "write", "shell"],
   "model": "deep",
   "effort": "high"

@@ -11,6 +11,7 @@ Planning, copy, and own-media work are never blocked by this file. Code-drawn ge
 ## Asset classes
 - own-media:
 - stock:
+- stock-audio:
 - generated-image:
 - generated-video:
 - synthetic-voice:

@@ -28,7 +28,7 @@ ON_CALL_AGENTS = ("software-debugger", "software-diagrammer", "software-docs-wri
 AGENTS = CORE_AGENTS + ON_CALL_AGENTS
 CONTENT_AGENTS = ("content-brand", "content-scout", "content-writer", "content-designer", "content-qa")
 PRODUCT_AGENTS = ("product-discovery", "product-spec", "product-ux", "product-reviewer")
-PRODUCT_FILES = ("assets/product.md",)
+PRODUCT_FILES = ("assets/product.md", "references/ui-craft.md")
 GAME_AGENTS = ("game-designer", "game-programmer", "game-technical-artist", "game-qa", "game-network-engineer")
 GAME_ENGINES = ("unity", "unreal", "godot", "roblox", "web", "generic")
 GAME_FILES = tuple("references/engine-%s.md" % e for e in GAME_ENGINES) + (
@@ -41,7 +41,8 @@ CONTENT_FILES = (
     "assets/publishing-policy.md", "assets/tool-preferences.md",
     "references/adapter-status.md", "references/qa-checks.md", "references/motion-design.md",
     "references/kinetic-typography.md", "references/video-pipeline.md", "references/visual-fx.md",
-    "references/scout-research.md",
+    "references/scout-research.md", "references/audio-beats.md", "references/design-skills.md", "assets/craft-digest.md",
+    "references/layout-craft.md",
 )
 
 
@@ -441,7 +442,7 @@ class SyncTest(TempRepoCase):
         self.assertEqual(self.run_check(), 1)
 
     def test_modified_codex_plugin_file(self):
-        self.edit_text("dist/codex-plugin/gaisser-agents/plugin.json", lambda t: t.replace("4.6.0", "9.9.9"))
+        self.edit_text("dist/codex-plugin/gaisser-agents/plugin.json", lambda t: t.replace("4.7.0", "9.9.9"))
         self.assertTrue(has_error(self.check_findings(), "out of date"))
 
     def test_modified_codex_marketplace(self):
@@ -503,7 +504,7 @@ class VersionBumpTest(TempRepoCase):
         self.assertTrue(has_error(f, "plugin.version was not bumped", "catalog.json"), f)
 
     def test_change_with_bump_passes(self):
-        self.edit_json("catalog.json", lambda d: d["plugin"].update(version="4.6.1"))
+        self.edit_json("catalog.json", lambda d: d["plugin"].update(version="4.7.1"))
         self.change_prompt_and_build()
         self.assertEqual(errors_of(build.check_version_bumps(self.root, "HEAD~1")), [])
 
@@ -957,7 +958,7 @@ class Part1Test(TeamFixture):
             want.add("dist/%s/gaisser-agents/skills/%s/SKILL.md" % (tool, STC))
             for f in STC_FILES:
                 want.add("dist/%s/gaisser-agents/skills/%s/%s" % (tool, STC, f))
-        self.assertEqual(len(want), 7 + 2 * (len(AGENTS) + len(CONTENT_AGENTS) + len(PRODUCT_AGENTS) + len(GAME_AGENTS)) + 3 * 13 + 3 * 2 + 3 * (1 + len(GAME_FILES)) + 3 * (2 + len(STC_FILES)))
+        self.assertEqual(len(want), 7 + 2 * (len(AGENTS) + len(CONTENT_AGENTS) + len(PRODUCT_AGENTS) + len(GAME_AGENTS)) + 3 * 17 + 3 * 3 + 3 * (1 + len(GAME_FILES)) + 3 * (2 + len(STC_FILES)))
         self.assertEqual(set(self.outputs()), want)
 
     def test_t2_marketplaces_and_renames(self):
@@ -1839,6 +1840,227 @@ class ShipToContentTest(TempRepoCase):
         for minimum in ("At least 12 dated sources", "At least 3 rounds of searching",
                         "At least 8 visual references"):
             self.assertIn(minimum, scout)
+
+
+class ContentMotionSoundTest(unittest.TestCase):
+    CT = "teams/content-team"
+    REFS = CT + "/skills/content-team/references/"
+    ASSETS = CT + "/skills/content-team/assets/"
+
+    def assertInOrder(self, text, items):
+        pos = -1
+        for item in items:
+            nxt = text.find(item, pos + 1)
+            self.assertGreater(nxt, pos, "missing or out of order: " + item)
+            pos = nxt
+
+    def assertHeadingsInOrder(self, text, headings):
+        self.assertInOrder(text, ["\n" + h + "\n" for h in headings])
+
+    def test_design_skills_contract(self):
+        text = read(REPO, self.REFS + "design-skills.md")
+        self.assertHeadingsInOrder(text, [
+            "## Find the skills", "## Craft digest", "## What each skill contributes",
+            "## Coverage rules", "## Craft sources in the spec",
+            "## Scene inside the GSAP pipeline", "## Own render path",
+            "## Capture a live page", "## Remotion (optional)"])
+        self.assertNotIn("## When to use each", text)
+        for s in ("motion-design", "`motion`", "anatomy", "anatomy-reveal", "hairline-create",
+                  "hairline-adopt", "remotion-markup", "frontend-design", "design-critique",
+                  "design-system", "accessibility-review",
+                  "MD-", "MO-", "AN-", "HL-", "AR-", "RM-", "FD-", "DC-", "DS-", "AX-",
+                  "director/disney-principles.md", "css-spring/index.md", "references/craft.md",
+                  "rules.md", "references/shots.md", "timing.md", "at least one transition",
+                  "waived", "~/.claude/skills/", "~/.agents/skills/", "~/.claude/plugins/",
+                  "page.clock.install", "runFor"):
+            self.assertIn(s, text)
+        self.assertRegex(text, r"(?m)^If a skill is not installed")
+        self.assertTrue(any("carrusel-aesthetic" in l and "visual-system.md" in l
+                            for l in text.splitlines()))
+        blocks = re.findall(r"```python\n(.*?)\n```", text, re.S)
+        self.assertEqual(len(blocks), 1)
+        compile(blocks[0], "fingerprint.py", "exec")
+        self.assertIn("sha256", blocks[0])
+        self.assertIsNone(re.search(r"[A-Za-z]:[\\/]", text))
+
+    def test_craft_digest_template(self):
+        text = read(REPO, self.ASSETS + "craft-digest.md")
+        self.assertEqual(text.splitlines()[0], "<!-- content-team craft digest v1 -->")
+        self.assertInOrder(text, ["\n## Sources\n", "\n## Principles\n", "\n## Conflicts\n"])
+        self.assertIn("| Skill | Folder | Files read | Fingerprint |", text)
+        self.assertIn("| ID | Rule | How it shows in a frame | Source file |", text)
+        self.assertIsNone(re.search(r"MD-\d", text))
+        self.assertIsNone(LEAK_RE.search(text))
+
+    def test_audio_contract(self):
+        text = read(REPO, self.REFS + "audio-beats.md")
+        self.assertInOrder(text, ["## Source music and effects", "## Record the licence",
+                                  "## Detect beats", "## Beat script", "## Use the beats",
+                                  "## Mix and encode", "## Fallback"])
+        for s in ("https://api.openverse.org/v1/audio/", "license=cc0,pdm,by", "stock-audio",
+                  "py -3.12", "loudnorm"):
+            self.assertIn(s, text)
+        self.assertRegex(text, r"[Ll]icences `sa`, `nc`, and `nd` are never used")
+        blocks = re.findall(r"```python\n(.*?)\n```", text, re.S)
+        self.assertEqual(len(blocks), 1)
+        compile(blocks[0], "beats.py", "exec")
+        for s in ("beat_track", "--fps", "sha256"):
+            self.assertIn(s, blocks[0])
+        self.assertNotIn("random", blocks[0])
+
+    def test_visual_fx_three(self):
+        text = read(REPO, self.REFS + "visual-fx.md")
+        for s in ("## three.js postprocessing", "## Particles with three.quarks",
+                  "## Determinism check", "EffectComposer", "UnrealBloomPass", "BokehPass",
+                  "FilmPass", "OutputPass", "composer.render(0)", "npm install three.quarks",
+                  "BatchedRenderer", "magick compare -metric AE"):
+            self.assertIn(s, text)
+        never = text.split("## Never", 1)[1]
+        for s in ("requestAnimationFrame", "setAnimationLoop", "THREE.Clock", "getDelta"):
+            self.assertIn(s, never)
+
+    def test_qa_checks(self):
+        text = read(REPO, self.REFS + "qa-checks.md")
+        self.assertEqual(re.findall(r"^\| (\d+)\. ", text, re.M), [str(i) for i in range(1, 12)])
+        for s in ("| 8. Audio licence and beat sync |", "| 9. Pre-rendered scenes |",
+                  "| 10. Craft sources |", "| 11. Layout craft |", "ebur128",
+                  "standard_deviation", "not seen", "craft-digest.md", "layout-report.json",
+                  "layout-craft.md"):
+            self.assertIn(s, text)
+        row11 = [l for l in text.splitlines() if l.startswith("| 11. ")][0]
+        for s in ("archetype", "priorRun", "Brand mode", "Product direction"):
+            self.assertIn(s, row11)
+        qa = read(REPO, self.CT + "/agents/content-qa/prompt.md")
+        self.assertEqual(qa.count("eleven checks"), 2)
+        for s in ("beats.json", "## Craft sources", "layout-craft.md"):
+            self.assertIn(s, qa)
+        for s in ("seven", "nine", "ten checks"):
+            self.assertNotIn(s, qa)
+
+    def test_prompts(self):
+        designer = read(REPO, self.CT + "/agents/content-designer/prompt.md")
+        for s in ("design-skills.md", "audio-beats.md", "SKILL.md", "## Beats", "PyPI",
+                  "craft digest", "## Craft sources", "not a menu", "layout-craft.md",
+                  "## Critique", "critique-board.png", "brand mode", "## Layout list"):
+            self.assertIn(s, designer)
+        for s in ("may fit", "whether a design skill fits"):
+            self.assertNotIn(s, designer)
+        scout = read(REPO, self.CT + "/agents/content-scout/prompt.md")
+        self.assertIn("audio-beats.md", scout)
+        self.assertIn("Openverse", scout)
+        meta = json.loads(read(REPO, self.CT + "/agents/content-designer/agent.json"))
+        self.assertTrue(40 <= len(meta["description"]) <= 400)
+        self.assertIn("beat", meta["description"])
+
+    def test_orchestrator(self):
+        text = read(REPO, self.CT + "/skills/content-team/instructions.md")
+        for s in ("references/audio-beats.md", "references/design-skills.md", "Music:",
+                  "stock-audio", "designSkills", "resolves to `ask`",
+                  "team-context/content-team/craft-digest.md", "assets/craft-digest.md",
+                  "references/layout-craft.md", "Brand mode: personal | product"):
+            self.assertIn(s, text)
+
+        def step(n):
+            return next(l for l in text.splitlines() if l.startswith("%d. **" % n))
+
+        for n in (1, 4, 5):
+            self.assertIn("priorRun", step(n))
+        for n in (4, 5):
+            self.assertIn("craft digest", step(n))
+            self.assertIn("references/layout-craft.md", step(n))
+        deleg = text.split("## Delegation rules", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("references/layout-craft.md", deleg)
+        self.assertIn("- stock-audio:", read(REPO, self.ASSETS + "media-policy.md"))
+        self.assertIn("## Optional design skills", read(REPO, self.ASSETS + "tool-preferences.md"))
+        ship = read(REPO, self.CT + "/skills/ship-to-content/instructions.md")
+        for s in ("audio-beats.md", "design-skills.md", "layout-craft.md"):
+            self.assertIn("../content-team/references/" + s, ship)
+        self.assertIn("../content-team/assets/craft-digest.md", ship)
+
+    def test_layout_craft(self):
+        text = read(REPO, self.REFS + "layout-craft.md")
+        self.assertHeadingsInOrder(text, [
+            "## Fixed core and variable layer", "## Brand mode", "## Grid and rhythm",
+            "## Type and line breaks", "## Composition with the photo",
+            "## Graphics and stickers", "## Sequence", "## Polish", "## Layout report",
+            "## Critique pass", "## Thresholds"])
+        self.assertGreaterEqual(len(set(re.findall(r"LY-\d\d", text))), 20)
+        for s in ("text-wrap: balance", "text-wrap: pretty", "getClientRects", "magick montage",
+                  "visual system wins", "full-bleed-low", "full-bleed-high", "detail-crop",
+                  "split", "inset-frame", "type-led", "collage", "## Layout list",
+                  "Brand mode: personal", "Brand mode: product", "## Product direction",
+                  "consecutive", "sha256"):
+            self.assertIn(s, text)
+        thresholds = text.split("\n## Thresholds\n", 1)[1]
+        for s in ("2 px", "30%", "1.2", "24 px", "60%"):
+            self.assertIn(s, thresholds)
+        self.assertIsNone(LEAK_RE.search(text))
+
+    def test_brand_mode(self):
+        designer = read(REPO, self.CT + "/agents/content-designer/prompt.md")
+        self.assertTrue(any(("Brand mode" in l or "brand mode" in l) and "product" in l
+                            for l in designer.splitlines()))
+        self.assertIn("signature", designer)
+        layout = read(REPO, self.REFS + "layout-craft.md")
+        section = layout.split("\n## Brand mode\n", 1)[1].split("\n## ", 1)[0]
+        for s in ("## Product direction", "Token | Value | Source", "5%"):
+            self.assertIn(s, section)
+        qa = read(REPO, self.REFS + "qa-checks.md")
+        row11 = [l for l in qa.splitlines() if l.startswith("| 11. ")][0]
+        self.assertIn("Product direction", row11)
+
+
+class ProductUxCraftTest(unittest.TestCase):
+    PT = "teams/product-team"
+    UI = PT + "/skills/product-team/references/ui-craft.md"
+
+    def test_ui_craft(self):
+        text = read(REPO, self.UI)
+        pos = -1
+        for h in ("## Tokens", "## Layout and hierarchy", "## States", "## Accessibility floor",
+                  "## Avoid defaults", "## Screen links", "## Critique"):
+            nxt = text.find("\n" + h + "\n", pos + 1)
+            self.assertGreater(nxt, pos, h)
+            pos = nxt
+        self.assertGreaterEqual(len(set(re.findall(r"UI-\d\d", text))), 15)
+        for s in (":root", "#screen=", "--headless", "44", "4.5", "### Token derivation"):
+            self.assertIn(s, text)
+        self.assertIn("never reuse", text.lower())
+        self.assertIsNone(LEAK_RE.search(text))
+
+    def test_ux_prompt(self):
+        prompt = read(REPO, self.PT + "/agents/product-ux/prompt.md")
+        for s in ("ui-craft.md", "## Visual design", "## Critique", ":root", "#screen=",
+                  "Token derivation"):
+            self.assertIn(s, prompt)
+        self.assertTrue(25 <= len(prompt.splitlines()) <= 80)
+        meta = json.loads(read(REPO, self.PT + "/agents/product-ux/agent.json"))
+        self.assertEqual(meta["capabilities"], ["read", "edit", "write", "shell"])
+        self.assertEqual(meta["model"], "standard")
+
+    def test_reviewer_prompt(self):
+        prompt = read(REPO, self.PT + "/agents/product-reviewer/prompt.md")
+        for s in ("ui-craft.md", ":root", "Token derivation"):
+            self.assertIn(s, prompt)
+
+    def test_instructions(self):
+        text = read(REPO, self.PT + "/skills/product-team/instructions.md")
+        for n in (6, 8):
+            line = next(l for l in text.splitlines() if l.startswith("%d. **" % n))
+            self.assertIn("references/ui-craft.md", line)
+
+    def test_contract_regexes(self):
+        text = read(REPO, self.UI)
+        colour = re.search(r"^- Raw colour: `([^`]+)`", text, re.M).group(1)
+        size = re.search(r"^- Raw font size: `([^`]+)`", text, re.M).group(1)
+        bad = ".card { color: rgb(10, 20, 30); font-size: 15px; }"
+        good = ".card { color: var(--ink); font-size: var(--fs-2); }"
+        self.assertTrue(re.search(colour, bad))
+        self.assertTrue(re.search(size, bad))
+        self.assertFalse(re.search(colour, good))
+        self.assertFalse(re.search(size, good))
+        self.assertTrue(re.search(colour, ".a { color: #1a2b3c; }"))
+        self.assertFalse(re.search(colour, '<a href="#added">x</a>'))
 
 
 if __name__ == "__main__":

@@ -50,9 +50,9 @@ Recognize these requests in any language, for example "sin checkpoints", "de cor
 3. **Gate 1: the problem.** Show the user the problem statement, the primary user, the verdict on the problem, the top risky assumptions, and the open questions, and give the brief's path. Ask whether the problem is the right one. If the verdict is `weak`, say so plainly and ask whether to continue, pivot, or stop. Send corrections back to discovery as a revision.
 4. **Define.** Delegate to `gaisser-agents:product-spec` with the run folder, the context path, and the user's gate 1 decisions verbatim.
 5. **Gate 2: the scope.** Show the MVP stories, the most important Out of scope entries, the metrics with targets, and the open questions, and give the spec's path. Ask the user to approve the cut. This gate always runs: deciding what is not built is the user's call. Send changes back to spec as a revision.
-6. **Design.** Delegate to `gaisser-agents:product-ux` with the run folder, the context path, the user's decisions so far, and any design references the user gave.
+6. **Design.** Delegate to `gaisser-agents:product-ux` with the run folder, the context path, the user's decisions so far, any design references the user gave, the path of `references/ui-craft.md`, and the `SKILL.md` paths of the installed design skills (found in `~/.claude/skills/`, `~/.agents/skills/`, and `~/.claude/plugins/`).
 7. **Gate 3: the design.** Give the prototype path and ask the user to open it and click through the flows. List the design assumptions to confirm. Send changes back to UX as a revision.
-8. **Close.** Delegate to `gaisser-agents:product-reviewer` with the run folder and every user decision so far.
+8. **Close.** Delegate to `gaisser-agents:product-reviewer` with the run folder, every user decision so far, and the path of `references/ui-craft.md`.
 9. **Fix loop.** If the verdict is `open`:
    - Ask the user every finding routed to `user`, in one message.
    - Send `blocking` and `major` findings to the agent each one is routed to, with the user's answers, in stage order: discovery, then spec, then UX. A change to the brief or the spec is followed by the agents downstream of it when the finding says they are affected.
