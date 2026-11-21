@@ -53,7 +53,7 @@ Never use linear easing for anything except ambient drift and continuous rotatio
 - No static stretch longer than 2 s, except a final call to action, which may hold up to 3 s while ambient motion continues.
 - Hold a text line on screen for at least 0.25 s per word, plus 0.5 s, before it leaves.
 - Build to a peak around 70 to 85 percent of the duration, then resolve.
-- When the piece has music, cut and land key moves on the beat; list the beat times in the spec.
+- When the piece has music, cut and land key moves on beat frames from `beats.json` (see `audio-beats.md`).
 
 ## Transitions between scenes
 
@@ -86,3 +86,7 @@ Treat the frame as a camera, not a page. Use a slow push-in (scale 1.00 to 1.06 
 ## Spec format
 
 The timeline section of `design-spec.md` lists, per scene: start and end time, the camera move, and one row per element with the element id, the property, from and to values, start time, duration token, and ease token. List the transition into the next scene by name. Add a `## Checkpoints` list: the time of every scene's settled state, every transition midpoint, and every caption change. QA reviews the piece at those times.
+
+Add `## Beats` (per `audio-beats.md`), `## Pre-rendered scenes` (per `design-skills.md`), and `## Design skills` (found, used, not found).
+
+In a single-piece spec these sections are `##`; in a multi-piece spec each is `###` under the piece's heading (for example `## Reel` then `### Beats`).

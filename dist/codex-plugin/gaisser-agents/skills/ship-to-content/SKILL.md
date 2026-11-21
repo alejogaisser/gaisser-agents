@@ -27,8 +27,8 @@ This skill does not copy the content team's rules. Read `../content-team/SKILL.m
 
 Resolve these files inside the sibling skill and pass the paths to the subagents that need them:
 
-- References: `../content-team/references/qa-checks.md`, `../content-team/references/scout-research.md`, `../content-team/references/adapter-status.md`, `../content-team/references/motion-design.md`, `../content-team/references/kinetic-typography.md`, `../content-team/references/video-pipeline.md`, and `../content-team/references/visual-fx.md`.
-- Templates: `../content-team/assets/profile.md`, `../content-team/assets/visual-system.md`, `../content-team/assets/media-policy.md`, `../content-team/assets/publishing-policy.md`, and `../content-team/assets/tool-preferences.md`.
+- References: `../content-team/references/qa-checks.md`, `../content-team/references/scout-research.md`, `../content-team/references/adapter-status.md`, `../content-team/references/motion-design.md`, `../content-team/references/kinetic-typography.md`, `../content-team/references/video-pipeline.md`, and `../content-team/references/visual-fx.md`, `../content-team/references/design-skills.md`, `../content-team/references/layout-craft.md`, `../content-team/references/audio-beats.md`, and `../content-team/references/creative-process.md`.
+- Templates: `../content-team/assets/profile.md`, `../content-team/assets/visual-system.md`, `../content-team/assets/media-policy.md`, `../content-team/assets/publishing-policy.md`, `../content-team/assets/tool-preferences.md`, and `../content-team/assets/craft-digest.md`.
 
 If the sibling is missing, tell the user to install the whole plugin, and stop.
 
