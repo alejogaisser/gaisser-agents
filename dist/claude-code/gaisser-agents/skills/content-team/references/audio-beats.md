@@ -14,7 +14,7 @@ Scout only. Use the Openverse API and nothing else:
 
 ## Record the licence
 
-In `scout.md`, add `## Audio candidates` with one row per file: Openverse `id`, `title`, `creator`, `license`, `license_version`, `license_url`, `foreign_landing_url`, `source`, duration in seconds, the `attribution` text verbatim as the credit line, the date read, and class `candidate-asset`. The main session resolves the class `stock-audio` and copies the allowed rows to `assets.md`. Prefer `cc0` when two candidates fit: a CC BY track re-uploaded by others can trigger a Content ID claim.
+In `scout.md`, add `## Audio candidates` with one row per file: Openverse `id`, `title`, `creator`, `license`, `license_version`, `license_url`, `foreign_landing_url`, `source`, duration in seconds, the `attribution` text verbatim as the credit line, the date read, and class `candidate-asset`. The main session resolves the class `stock-audio` and copies the allowed rows to `assets.md`. Openverse and provider tags do not exclude vocals. The user auditions the chosen track at the review gate; record the answer as `approvals.audioAudition` (`no vocals` or `has vocals`), and until it exists the no-voice part of QA check 8 is `limited` with the reason `vocals not auditioned`. A track with vocals is replaced or the piece goes effects-only. Prefer `cc0` when two candidates fit: a CC BY track re-uploaded by others can trigger a Content ID claim.
 
 ## Detect beats
 
@@ -73,7 +73,7 @@ with open(a.out, "w") as f:
 
 ## Use the beats
 
-Add `## Beats` to the spec: `Event | Kind (cut, land, sfx) | Beat index | Time s | Frame | on-beat`. Put every scene cut and the hook landing on a beat frame, prefer `strong` beats for cuts, and mark each such event `on-beat`. Add each on-beat time to `## Checkpoints`. The tolerance is 1 frame.
+In a single-piece spec the Beats section are `##`; in a multi-piece spec each is `###` under the piece's heading (for example `## Reel` then `### Beats`). Add `## Beats` to the spec: `Event | Kind (cut, land, sfx) | Beat index | Time s | Frame | on-beat`. Put every scene cut and the hook landing on a beat frame, prefer `strong` beats for cuts, and mark each such event `on-beat`. Add each on-beat time to `## Checkpoints`. The tolerance is 1 frame.
 
 ## Mix and encode
 

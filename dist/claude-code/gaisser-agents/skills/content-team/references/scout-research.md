@@ -21,6 +21,10 @@ Used when `brief.md` says `Scout: light`, for example for a piece about the user
 - At least 3 hooks, each with its pattern and an example.
 - `## Working broadly` is still required, and the report says that this was a light pass.
 
+## Signals pass
+
+Used in the `material and signals` pass, before the user picks an angle. One round, aimed at the format and the hook mechanisms native now on each of the brief's platforms: at least 2 dated sources per platform and at least 4 in total. Write them under `## Signals` in `scout.md`. It counts as round 1 of a full pass.
+
 ## Source types
 
 | Type | Where to look | What to take |
@@ -50,7 +54,7 @@ Used when `brief.md` says `Scout: light`, for example for a piece about the user
 
 After research, write for each of these one short paragraph with the sources that support it:
 
-1. **Angle:** the single idea the piece commits to.
+1. **Angle:** under the heading `## Angle` in `scout.md`, the user's chosen angle from `angles.md`; add the evidence for it.
 2. **Hooks:** at least 3 options, each with the pattern it follows and an example that used it.
 3. **Format and structure:** the length, page or scene count, and order that the evidence favours.
 4. **Visual direction:** the mood, palette use within the brand's roles, layout patterns, and type treatment, each tied to references.

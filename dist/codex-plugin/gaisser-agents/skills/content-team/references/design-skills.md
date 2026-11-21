@@ -71,9 +71,13 @@ The visual system and the team's references win on conflict; record each conflic
 
 ## Craft sources in the spec
 
+In a single-piece spec these sections are `##`; in a multi-piece spec each is `###` under the piece's heading (for example `## Reel` then `### Beats`).
+
 `design-spec.md` carries `## Craft sources`. First line: `Digest: <path>, v1, <skill>=<fingerprint> ...`. Then a table `Item | Kind (piece, scene, transition, graphic, ease, page) | IDs | How it shows (property, value, time) | Where (checkpoint or page)`, with a row for every scene, named transition, coded graphic, spring or overshoot ease, and page. "How it shows" names a property, a value, and a time, never only an ID. Last line: `Not installed: <skills or None>`.
 
 ## Scene inside the GSAP pipeline
+
+The Pre-rendered scenes section follows the heading rule above.
 
 A pre-rendered scene is optional; the craft language applies with or without one. The skill's output is pre-rendered to a PNG sequence, and the GSAP page shows it with brand type and stickers on top.
 

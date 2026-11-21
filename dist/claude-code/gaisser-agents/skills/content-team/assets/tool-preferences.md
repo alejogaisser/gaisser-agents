@@ -13,6 +13,12 @@ One row per format you use. The format list is yours; add or remove rows freely.
 - Backend:
 - Version:
 
+## Material sources
+- Repositories (local paths, read-only):
+- Notes folders:
+- Footage inventories:
+- Off-limits (projects, clients, people):
+
 ## Optional design skills
 - Skills folder (leave empty to use the default folders):
 - Remotion licence eligibility (only when Remotion is a backend):

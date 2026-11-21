@@ -42,7 +42,7 @@ CONTENT_FILES = (
     "references/adapter-status.md", "references/qa-checks.md", "references/motion-design.md",
     "references/kinetic-typography.md", "references/video-pipeline.md", "references/visual-fx.md",
     "references/scout-research.md", "references/audio-beats.md", "references/design-skills.md", "assets/craft-digest.md",
-    "references/layout-craft.md",
+    "references/layout-craft.md", "references/creative-process.md",
 )
 
 
@@ -958,7 +958,7 @@ class Part1Test(TeamFixture):
             want.add("dist/%s/gaisser-agents/skills/%s/SKILL.md" % (tool, STC))
             for f in STC_FILES:
                 want.add("dist/%s/gaisser-agents/skills/%s/%s" % (tool, STC, f))
-        self.assertEqual(len(want), 7 + 2 * (len(AGENTS) + len(CONTENT_AGENTS) + len(PRODUCT_AGENTS) + len(GAME_AGENTS)) + 3 * 17 + 3 * 3 + 3 * (1 + len(GAME_FILES)) + 3 * (2 + len(STC_FILES)))
+        self.assertEqual(len(want), 7 + 2 * (len(AGENTS) + len(CONTENT_AGENTS) + len(PRODUCT_AGENTS) + len(GAME_AGENTS)) + 3 * 18 + 3 * 3 + 3 * (1 + len(GAME_FILES)) + 3 * (2 + len(STC_FILES)))
         self.assertEqual(set(self.outputs()), want)
 
     def test_t2_marketplaces_and_renames(self):
@@ -1921,9 +1921,10 @@ class ContentMotionSoundTest(unittest.TestCase):
 
     def test_qa_checks(self):
         text = read(REPO, self.REFS + "qa-checks.md")
-        self.assertEqual(re.findall(r"^\| (\d+)\. ", text, re.M), [str(i) for i in range(1, 12)])
+        self.assertEqual(re.findall(r"^\| (\d+)\. ", text, re.M), [str(i) for i in range(1, 13)])
         for s in ("| 8. Audio licence and beat sync |", "| 9. Pre-rendered scenes |",
-                  "| 10. Craft sources |", "| 11. Layout craft |", "ebur128",
+                  "| 10. Craft sources |", "| 11. Layout craft |", "| 12. Creative process |",
+                  "ebur128",
                   "standard_deviation", "not seen", "craft-digest.md", "layout-report.json",
                   "layout-craft.md"):
             self.assertIn(s, text)
@@ -1931,10 +1932,10 @@ class ContentMotionSoundTest(unittest.TestCase):
         for s in ("archetype", "priorRun", "Brand mode", "Product direction"):
             self.assertIn(s, row11)
         qa = read(REPO, self.CT + "/agents/content-qa/prompt.md")
-        self.assertEqual(qa.count("eleven checks"), 2)
+        self.assertEqual(qa.count("twelve checks"), 2)
         for s in ("beats.json", "## Craft sources", "layout-craft.md"):
             self.assertIn(s, qa)
-        for s in ("seven", "nine", "ten checks"):
+        for s in ("seven", "nine", "ten checks", "eleven checks"):
             self.assertNotIn(s, qa)
 
     def test_prompts(self):
@@ -1963,9 +1964,9 @@ class ContentMotionSoundTest(unittest.TestCase):
         def step(n):
             return next(l for l in text.splitlines() if l.startswith("%d. **" % n))
 
-        for n in (1, 4, 5):
+        for n in (1, 7, 8):
             self.assertIn("priorRun", step(n))
-        for n in (4, 5):
+        for n in (7, 8):
             self.assertIn("craft digest", step(n))
             self.assertIn("references/layout-craft.md", step(n))
         deleg = text.split("## Delegation rules", 1)[1].split("\n## ", 1)[0]
@@ -2008,6 +2009,104 @@ class ContentMotionSoundTest(unittest.TestCase):
         qa = read(REPO, self.REFS + "qa-checks.md")
         row11 = [l for l in qa.splitlines() if l.startswith("| 11. ")][0]
         self.assertIn("Product direction", row11)
+
+
+class CreativeProcessTest(unittest.TestCase):
+    CT = "teams/content-team"
+    REFS = CT + "/skills/content-team/references/"
+
+    @staticmethod
+    def section(text, heading):
+        return text.split("\n" + heading + "\n", 1)[1].split("\n## ", 1)[0]
+
+    def test_reference(self):
+        text = read(REPO, self.REFS + "creative-process.md")
+        pos = -1
+        for h in ("## Material", "## Angle families", "## Kill criteria", "## Scorecard",
+                  "## Angle gate", "## Hook bank", "## Drafts and punch-up", "## Voice check",
+                  "## Banned clich\u00e9s", "## Specificity"):
+            nxt = text.find("\n" + h + "\n", pos + 1)
+            self.assertGreater(nxt, pos, h)
+            pos = nxt
+        for s in ("M-1", "at least 12", "1.5 s", "swap test", "otra tanda"):
+            self.assertIn(s, text)
+        for k in range(1, 8):
+            self.assertIn("`K%d`" % k, text)
+        self.assertGreaterEqual(len(re.findall(r"(?m)^- ", self.section(text, "## Angle families"))), 6)
+        self.assertGreaterEqual(len(re.findall(r"(?m)^- ", self.section(text, "## Hook bank"))), 8)
+        self.assertGreaterEqual(
+            len(re.findall(r'(?m)^- "[^"]+"', self.section(text, "## Banned clich\u00e9s"))), 15)
+        material = self.section(text, "## Material")
+        self.assertIn("git log", material)
+        self.assertIn("never copy code", material)
+        self.assertIsNone(LEAK_RE.search(text))
+
+    def test_scout(self):
+        prompt = read(REPO, self.CT + "/agents/content-scout/prompt.md")
+        for s in ("creative-process.md", "material.md", "## Signals", "material and signals",
+                  "research", "never re-choose"):
+            self.assertIn(s, prompt)
+        self.assertNotIn("Choose one angle", prompt)
+        self.assertTrue(25 <= len(prompt.splitlines()) <= 80)
+        playbook = read(REPO, self.REFS + "scout-research.md")
+        self.assertIn("## Signals pass", playbook)
+        for s in ("At least 12 dated sources", "At least 3 rounds of searching",
+                  "At least 8 visual references"):
+            self.assertIn(s, playbook)
+
+    def test_writer(self):
+        prompt = read(REPO, self.CT + "/agents/content-writer/prompt.md")
+        for s in ("creative-process.md", "angles.md", "drafts.md", "## Hook bank",
+                  "## Punch-up log", "ideation", "M-"):
+            self.assertIn(s, prompt)
+        self.assertIn("- Write only `copy.md`, `angles.md`, and `drafts.md` in the run folder.", prompt)
+        meta = json.loads(read(REPO, self.CT + "/agents/content-writer/agent.json"))
+        self.assertEqual((meta["model"], meta["effort"]), ("deep", "high"))
+        self.assertEqual(meta["capabilities"], ["read", "write"])
+        self.assertIn("angle", meta["description"])
+        self.assertTrue(40 <= len(meta["description"]) <= 400)
+
+    def test_orchestrator(self):
+        text = read(REPO, self.CT + "/skills/content-team/instructions.md")
+        for s in ("Angle gate", "material.md", "angles.md", "Material:", "approvals.angle",
+                  "otra tanda", "el" + "eg\u00ed vos", "references/creative-process.md",
+                  "briefed -> ideated -> angle-approved -> scouted",
+                  "other flows go briefed -> scouted"):
+            self.assertIn(s, text)
+        full = text.split("## Full run", 1)[1].split("\n## ", 1)[0]
+        self.assertEqual(full.count("pass `material and signals`"), 1)
+        self.assertEqual(full.count("pass `research`"), 1)
+        self.assertEqual(full.count("pass `ideation`"), 1)
+        self.assertEqual(full.count("pass `copy`"), 1)
+        self.assertIn("## Material sources",
+                      read(REPO, self.CT + "/skills/content-team/assets/tool-preferences.md"))
+
+    def test_qa(self):
+        text = read(REPO, self.REFS + "qa-checks.md")
+        row = [l for l in text.splitlines() if l.startswith("| 12. ")][0]
+        for s in ("material.md", "angles.md", "## Hook bank", "drafts.md", "banned",
+                  "not applicable"):
+            self.assertIn(s, row)
+        self.assertIn("Creative process: a short script", text)
+        qa = read(REPO, self.CT + "/agents/content-qa/prompt.md")
+        self.assertIn("creative-process.md", qa)
+        self.assertIn("never judge which angle is better", qa)
+
+    def test_r31(self):
+        sentence = "under the piece's heading"
+        for f in ("agents/content-designer/prompt.md", "skills/content-team/references/design-skills.md",
+                  "skills/content-team/references/audio-beats.md",
+                  "skills/content-team/references/qa-checks.md"):
+            self.assertIn(sentence, read(REPO, self.CT + "/" + f), f)
+        text = read(REPO, self.CT + "/skills/content-team/instructions.md")
+        for s in ("policyResolutions", "formatOverrides", "approvals.audioAudition"):
+            self.assertIn(s, text)
+        audio = read(REPO, self.REFS + "audio-beats.md")
+        qa = read(REPO, self.REFS + "qa-checks.md")
+        row8 = [l for l in qa.splitlines() if l.startswith("| 8. ")][0]
+        for blob in (audio, row8):
+            self.assertIn("vocals not auditioned", blob)
+            self.assertIn("approvals.audioAudition", blob)
 
 
 class ProductUxCraftTest(unittest.TestCase):

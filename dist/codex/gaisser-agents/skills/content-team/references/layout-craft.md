@@ -63,6 +63,8 @@ The spec states `Brand mode: personal` or `Brand mode: product`, copied from `br
 
 ## Layout report
 
+In a single-piece spec `## Layout list` and `## Critique` are `##`; in a multi-piece spec each is `###` under the piece's heading.
+
 For every still page and every video checkpoint, write `out/<piece>/layout-report.json`. It lists the declared grid, and per element its id, layer, box, rotation, computed font size and line height, and per-line widths measured through `Range.getClientRects`, plus the spec's face boxes. Rotated stickers are measured by their unrotated box.
 
 ## Critique pass

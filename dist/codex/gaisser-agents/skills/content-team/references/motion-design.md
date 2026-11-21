@@ -88,3 +88,5 @@ Treat the frame as a camera, not a page. Use a slow push-in (scale 1.00 to 1.06 
 The timeline section of `design-spec.md` lists, per scene: start and end time, the camera move, and one row per element with the element id, the property, from and to values, start time, duration token, and ease token. List the transition into the next scene by name. Add a `## Checkpoints` list: the time of every scene's settled state, every transition midpoint, and every caption change. QA reviews the piece at those times.
 
 Add `## Beats` (per `audio-beats.md`), `## Pre-rendered scenes` (per `design-skills.md`), and `## Design skills` (found, used, not found).
+
+In a single-piece spec these sections are `##`; in a multi-piece spec each is `###` under the piece's heading (for example `## Reel` then `### Beats`).
